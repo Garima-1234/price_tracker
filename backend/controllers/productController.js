@@ -152,20 +152,32 @@ exports.getProductById = async (req, res) => {
  */
 exports.getPriceHistory = async (req, res) => {
     try {
-        const { id } = req.params;
+        const id = req.params.id || req.query.product_id;
         const { platform = 'all' } = req.query;
 
         const mongoose = require('mongoose');
-        if (mongoose.connection.readyState !== 1) {
-            return res.json({ success: true, history: [], message: 'Database not connected' });
+        const isDbConnected = mongoose.connection.readyState === 1;
+        const isObjectId = mongoose.Types.ObjectId.isValid(id);
+
+        let product = null;
+        let history = [];
+
+        if (isDbConnected) {
+            if (isObjectId) {
+                product = await Product.findById(id);
+            }
+            if (product) history = product.priceHistory || [];
+        } else {
+            // DB Offline Fallback: Find from recent memory cache
+            for (const [, cached] of searchCache) {
+                const found = cached.products.find(p => p._id && p._id.toString() === id || generateId(p.name) === id);
+                if (found) { product = found; break; }
+            }
         }
 
-        const product = await Product.findById(id);
         if (!product) {
             return res.status(404).json({ success: false, error: 'Product not found' });
         }
-
-        let history = product.priceHistory || [];
 
         if (platform !== 'all') {
             history = history.filter(h => h.platform === platform);
@@ -315,6 +327,21 @@ function getLowestPriceInfo(prices) {
     return lowest;
 }
 
+function normalizePrice(value) {
+    if (value == null) return null;
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    if (typeof value === 'string') {
+        const num = parseInt(value.replace(/[^0-9]/g, ''), 10);
+        return Number.isFinite(num) && num > 0 ? num : null;
+    }
+    if (typeof value === 'object') {
+        // Handle common shapes like { value: 123 } or { price: 123 }
+        const candidate = value.value ?? value.price ?? value.amount;
+        return normalizePrice(candidate);
+    }
+    return null;
+}
+
 async function saveProductsToDB(products, searchQuery) {
     try {
         const mongoose = require('mongoose');
@@ -362,3 +389,167 @@ async function saveProductsToDB(products, searchQuery) {
         }
     } catch (e) { /* DB not available */ }
 }
+
+/**
+ * Predict future price using Linear Regression Model
+ * GET /predict-price?product_id=ID
+ */
+exports.predictPrice = async (req, res) => {
+    try {
+        const productId = req.query.product_id;
+        if (!productId) {
+            return res.status(400).json({ success: false, error: 'product_id query parameter is required' });
+        }
+        
+        const platform = req.query.platform || 'amazon';
+        const predictor = require('../ml/pricePredictor');
+        
+        const prediction = await predictor.predictPrice(productId, platform);
+        
+        return res.json({
+            success: true,
+            predicted_price: prediction.predicted_price,
+            trend: prediction.trend,
+            confidence_score: prediction.confidence_score
+        });
+    } catch (error) {
+        return res.status(400).json({ success: false, error: error.message });
+    }
+};
+
+/**
+ * Get formatted price history from standalone PriceHistory collection
+ * GET /price-history?product_id=ID
+ * Response: { dates: ["1 Mar", ...], prices: [42000, ...], count: N }
+ */
+exports.getPriceHistoryFormatted = async (req, res) => {
+    try {
+        const { product_id } = req.query;
+        if (!product_id) {
+            return res.status(400).json({ success: false, error: 'product_id query parameter is required' });
+        }
+
+        const mongoose = require('mongoose');
+        const PriceHistory = require('../models/PriceHistory');
+
+        let records = [];
+
+        if (mongoose.connection.readyState === 1) {
+            // Query standalone PriceHistory collection — last 90 records sorted oldest first
+            records = await PriceHistory
+                .find({ product_id })
+                .sort({ timestamp: 1 })
+                .limit(90)
+                .lean();
+        }
+
+        // Fallback: if standalone collection is empty, read from embedded product.priceHistory
+        if (records.length === 0 && mongoose.connection.readyState === 1) {
+            const product = await Product.findById(product_id).lean();
+            if (product?.priceHistory?.length) {
+                records = product.priceHistory
+                    .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+                    .slice(-90)
+                    .map(h => ({ price: h.price, timestamp: h.timestamp }));
+            }
+        }
+
+        const count = records.length;
+        const dates = records.map(r =>
+            new Date(r.timestamp).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+        );
+        const prices = records.map(r => r.price);
+
+        return res.json({ success: true, dates, prices, count });
+    } catch (error) {
+        return res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+
+/**
+ * Compare prices across all platforms
+ * GET /compare-prices?product_id=ID
+ * GET /api/compare-prices?product_name=NAME
+ */
+exports.comparePrices = async (req, res) => {
+    try {
+        const productId   = req.query.product_id;
+        const productName = req.query.product_name;
+
+        if (!productId && !productName) {
+            return res.status(400).json({ success: false, error: 'product_id or product_name required' });
+        }
+
+        let product = null;
+        let searchQuery = productName || '';
+
+        const mongoose = require('mongoose');
+
+        // 1. Try finding in DB
+        if (productId && mongoose.connection.readyState === 1) {
+            const isObjectId = mongoose.Types.ObjectId.isValid(productId);
+            if (isObjectId) {
+                product = await Product.findById(productId);
+            }
+            if (product) searchQuery = product.name;
+        }
+
+        // 2. Try finding in cache
+        if (!product) {
+            for (const [, cached] of searchCache) {
+                const found = cached.products.find(p =>
+                    (p._id && p._id.toString() === productId) || generateId(p.name) === productId || p.name === productName
+                );
+                if (found) {
+                    product = found;
+                    break;
+                }
+            }
+        }
+        
+        // 3. If still not found, trigger an aggregation
+        if (!product && searchQuery) {
+            const freshProducts = await aggregatePrices(searchQuery);
+            if (freshProducts.length > 0) {
+                // Find exact match or take best
+                product = freshProducts.find(p => p.name === searchQuery) || freshProducts[0];
+            }
+        }
+
+        if (!product || !product.prices) {
+            return res.json({ success: true, results: [], searchQuery });
+        }
+
+        // 4. Format existing prices array 
+        const storesMap = {
+            amazon: 'Amazon', flipkart: 'Flipkart', 
+            myntra: 'Myntra', ajio: 'AJIO',
+            croma: 'Croma', reliance: 'Reliance Digital', vijay: 'Vijay Sales'
+        };
+
+        const results = Object.entries(product.prices)
+            .map(([platform, data]) => {
+                if (data?._simulated) return null;
+                const price = normalizePrice(data?.price);
+                if (!price) return null;
+                return {
+                    store: storesMap[platform] || platform,
+                    price,
+                    product_url: data?.url || '',
+                    availability: data?.inStock !== false,
+                    platform,
+                };
+            })
+            .filter(Boolean)
+            .sort((a, b) => a.price - b.price);
+
+        if (results.length > 0) results[0].isLowest = true;
+
+        return res.json({ success: true, results, searchQuery });
+
+    } catch (error) {
+        console.error('comparePrices error:', error);
+        return res.status(500).json({ success: false, error: error.message });
+    }
+};

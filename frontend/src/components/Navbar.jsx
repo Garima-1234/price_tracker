@@ -1,10 +1,11 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { Search, User, Heart, LogOut, TrendingDown } from 'lucide-react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Search, User, Heart, LogOut, TrendingDown, Zap, Bell } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Navbar({ user, onLoginClick, onLogout }) {
     const [searchQuery, setSearchQuery] = useState('');
     const navigate = useNavigate();
+    const location = useLocation();
 
     const handleSearch = (e) => {
         e.preventDefault();
@@ -14,20 +15,42 @@ export default function Navbar({ user, onLoginClick, onLogout }) {
         }
     };
 
+    const isActive = (path) => location.pathname === path;
+
     return (
         <nav className="glass-effect sticky top-0 z-50 border-b border-purple-100">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
                     {/* Logo */}
-                    <Link to="/" className="flex items-center space-x-2 group">
+                    <Link to="/" className="flex items-center space-x-2 group flex-shrink-0">
                         <div className="bg-gradient-to-r from-primary-600 to-accent-600 p-2 rounded-lg group-hover:scale-110 transition-transform">
                             <TrendingDown className="w-6 h-6 text-white" />
                         </div>
                         <span className="text-2xl font-bold gradient-text">BuyHatke</span>
                     </Link>
 
+                    {/* Nav Links (desktop) */}
+                    <div className="hidden md:flex items-center gap-1 mx-4">
+                        <Link
+                            to="/deals"
+                            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
+                                isActive('/deals') ? 'bg-orange-100 text-orange-700' : 'text-gray-600 hover:bg-orange-50 hover:text-orange-600'
+                            }`}
+                        >
+                            <Zap className="w-4 h-4" /> Deals
+                        </Link>
+                        <Link
+                            to="/alerts"
+                            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
+                                isActive('/alerts') ? 'bg-amber-100 text-amber-700' : 'text-gray-600 hover:bg-amber-50 hover:text-amber-600'
+                            }`}
+                        >
+                            <Bell className="w-4 h-4" /> Alerts
+                        </Link>
+                    </div>
+
                     {/* Search Bar */}
-                    <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-2xl mx-8">
+                    <form onSubmit={handleSearch} className="hidden md:flex flex-1 max-w-xl mx-4">
                         <div className="relative w-full">
                             <input
                                 type="text"
@@ -46,7 +69,7 @@ export default function Navbar({ user, onLoginClick, onLogout }) {
                     </form>
 
                     {/* User Actions */}
-                    <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-3">
                         {user ? (
                             <>
                                 <Link
@@ -71,34 +94,37 @@ export default function Navbar({ user, onLoginClick, onLogout }) {
                                 </button>
                             </>
                         ) : (
-                            <button
-                                onClick={onLoginClick}
-                                className="btn-primary"
-                            >
+                            <button onClick={onLoginClick} className="btn-primary">
                                 Login / Sign Up
                             </button>
                         )}
                     </div>
                 </div>
 
-                {/* Mobile Search */}
-                <form onSubmit={handleSearch} className="md:hidden pb-4">
-                    <div className="relative">
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Search products..."
-                            className="input-field pr-12"
-                        />
-                        <button
-                            type="submit"
-                            className="absolute right-2 top-1/2 -translate-y-1/2 bg-primary-600 text-white p-2 rounded-lg"
-                        >
-                            <Search className="w-5 h-5" />
-                        </button>
+                {/* Mobile Search + Nav */}
+                <div className="md:hidden pb-3 space-y-2">
+                    <form onSubmit={handleSearch}>
+                        <div className="relative">
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Search products..."
+                                className="input-field pr-12"
+                            />
+                            <button
+                                type="submit"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 bg-primary-600 text-white p-2 rounded-lg"
+                            >
+                                <Search className="w-5 h-5" />
+                            </button>
+                        </div>
+                    </form>
+                    <div className="flex gap-2">
+                        <Link to="/deals"  className="flex-1 text-center py-1.5 rounded-lg bg-orange-50 text-orange-700 text-sm font-semibold">🔥 Deals</Link>
+                        <Link to="/alerts" className="flex-1 text-center py-1.5 rounded-lg bg-amber-50 text-amber-700 text-sm font-semibold">🔔 Alerts</Link>
                     </div>
-                </form>
+                </div>
             </div>
         </nav>
     );

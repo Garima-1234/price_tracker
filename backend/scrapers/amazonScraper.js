@@ -17,8 +17,12 @@ function getRandomUA() {
  */
 async function scrapeAmazon(query) {
     try {
-        const url = `https://www.amazon.in/s?k=${encodeURIComponent(query)}`;
-        console.log(`🔍 Amazon: Searching for "${query}"`);
+        const targetUrl = `https://www.amazon.in/s?k=${encodeURIComponent(query)}`;
+        const url = process.env.SCRAPERAPI_KEY 
+            ? `http://api.scraperapi.com/?api_key=${process.env.SCRAPERAPI_KEY}&url=${encodeURIComponent(targetUrl)}&country_code=in`
+            : targetUrl;
+            
+        console.log(`🔍 Amazon: Searching for "${query}" (Proxy: ${!!process.env.SCRAPERAPI_KEY})`);
 
         const { data: html } = await axios.get(url, {
             headers: {
@@ -31,7 +35,7 @@ async function scrapeAmazon(query) {
                 'Upgrade-Insecure-Requests': '1',
                 'Cache-Control': 'max-age=0',
             },
-            timeout: 15000,
+            timeout: 25000,
         });
 
         const $ = cheerio.load(html);
@@ -50,7 +54,10 @@ async function scrapeAmazon(query) {
                 const image = $el.find('img.s-image').attr('src') || '';
 
                 let href = $el.find('h2 a').attr('href') || '';
-                const productUrl = href.startsWith('http') ? href : `https://www.amazon.in${href}`;
+                let productUrl = href;
+                if (href) {
+                     productUrl = href.startsWith('http') ? href : `https://www.amazon.in${href}`;
+                }
 
                 let rating = 0;
                 const ratingText = $el.find('.a-icon-star-small .a-icon-alt').first().text();

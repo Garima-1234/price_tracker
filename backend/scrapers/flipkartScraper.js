@@ -16,8 +16,12 @@ function getRandomUA() {
  */
 async function scrapeFlipkart(query) {
     try {
-        const url = `https://www.flipkart.com/search?q=${encodeURIComponent(query)}`;
-        console.log(`🔍 Flipkart: Searching for "${query}"`);
+        const targetUrl = `https://www.flipkart.com/search?q=${encodeURIComponent(query)}`;
+        const url = process.env.SCRAPERAPI_KEY 
+            ? `http://api.scraperapi.com/?api_key=${process.env.SCRAPERAPI_KEY}&url=${encodeURIComponent(targetUrl)}&country_code=in`
+            : targetUrl;
+            
+        console.log(`🔍 Flipkart: Searching for "${query}" (Proxy: ${!!process.env.SCRAPERAPI_KEY})`);
 
         const { data: html } = await axios.get(url, {
             headers: {
@@ -28,7 +32,7 @@ async function scrapeFlipkart(query) {
                 'DNT': '1',
                 'Connection': 'keep-alive',
             },
-            timeout: 15000,
+            timeout: 25000,
         });
 
         const $ = cheerio.load(html);
@@ -73,7 +77,8 @@ async function scrapeFlipkart(query) {
                     $el.find('a[href*="/p/"]').attr('href') ||
                     $el.find('a').first().attr('href') ||
                     '';
-                const productUrl = href ? (href.startsWith('http') ? href : `https://www.flipkart.com${href}`) : '';
+                let productUrl = href ? (href.startsWith('http') ? href : `https://www.flipkart.com${href}`) : '';
+                // Kept original URL so exact variants are preserved
 
                 // Rating
                 let rating = 0;
@@ -101,7 +106,8 @@ async function scrapeFlipkart(query) {
                     const price = parseInt((priceText || '').replace(/[^0-9]/g, ''));
                     const image = $parent.find('img').first().attr('src') || '';
                     let href = $el.attr('href') || '';
-                    const productUrl = href.startsWith('http') ? href : `https://www.flipkart.com${href}`;
+                    let productUrl = href.startsWith('http') ? href : `https://www.flipkart.com${href}`;
+                    // Kept original URL so exact variants are preserved
 
                     if (name && name.length > 5 && price > 0) {
                         products.push({ name: name.substring(0, 150), price, image, url: productUrl, rating: 0, platform: 'flipkart', inStock: true });

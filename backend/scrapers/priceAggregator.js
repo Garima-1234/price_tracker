@@ -64,13 +64,15 @@ async function aggregatePrices(searchQuery) {
 
             const existing = productMap.get(normalizedName);
 
-            // Add platform-specific price
-            existing.prices[product.platform] = {
-                price: product.price,
-                url: product.url || '',
-                inStock: product.inStock !== false,
-                lastUpdated: new Date()
-            };
+            // Add platform-specific price only if valid
+            if (product.platform && product.price) {
+                existing.prices[product.platform] = {
+                    price: product.price,
+                    url: product.url || '',
+                    inStock: product.inStock !== false,
+                    lastUpdated: new Date()
+                };
+            }
 
             // Use better image if available
             if (product.image && (!existing.image || product.image.length > existing.image.length)) {
@@ -78,12 +80,95 @@ async function aggregatePrices(searchQuery) {
             }
 
             // Keep higher rating
-            if (product.rating > existing.rating) {
+            if (product.rating && product.rating > existing.rating) {
                 existing.rating = product.rating;
             }
         });
 
         let aggregatedProducts = Array.from(productMap.values());
+
+        // ─── MULTI-PLATFORM PRICE ENRICHMENT ────────────────────────────────────────
+        // Since Flipkart/Myntra/Ajio block live scraping, we synthesise realistic
+        // prices for every platform. Prices are deterministic per product (based on
+        // name hash) so different products show different "lowest" platforms.
+        // All platforms get correct search-result URLs.
+        if (process.env.SIMULATE_PRICES === 'true') {
+        aggregatedProducts.forEach(prod => {
+            const platforms = Object.keys(prod.prices);
+            if (platforms.length === 0) return;
+
+            // Prefer Amazon as the base (most reliable scrape)
+            const basePlat = prod.prices.amazon ? 'amazon' : platforms[0];
+            const basePrice = prod.prices[basePlat].price;
+            const baseMrp   = prod.prices[basePlat].mrp || Math.round(basePrice * 1.25);
+
+            // Deterministic multiplier per product (hash on product name, 0–99)
+            let hash = 0;
+            for (const c of prod.name) hash = (hash * 31 + c.charCodeAt(0)) & 0xffff;
+            const seed = hash % 100; // 0..99
+
+            // Price offsets for each platform — rotated by seed so "cheapest" varies
+            // offsets[i] is additive % of basePrice: negative = cheaper, positive = costlier
+            const rawOffsets = { amazon: 0, flipkart: -2, myntra: -4, ajio: -3, croma: 5, reliance: 2 };
+
+            // Rotate cheapness: shift offsets by seed so a different platform wins per product
+            const rotation = [0, 1, 2, 3, 4, 5][seed % 6]; // 0-5 shifts
+            const keys = Object.keys(rawOffsets);
+            const shifted = {};
+            keys.forEach((k, i) => {
+                shifted[keys[(i + rotation) % keys.length]] = Object.values(rawOffsets)[i];
+            });
+
+            // Build platform URLs (always correct search links)
+            const encName = encodeURIComponent(prod.name);
+            const urls = {
+                amazon:   `https://www.amazon.in/s?k=${encName}`,
+                flipkart: `https://www.flipkart.com/search?q=${encName}`,
+                myntra:   `https://www.myntra.com/${encName.replace(/%20/g, '-')}`,
+                ajio:     `https://www.ajio.com/search/?text=${encName}`,
+                croma:    `https://www.croma.com/search/?q=${encName}`,
+                reliance: `https://www.reliancedigital.in/search?q=${encName}:relevance`,
+            };
+
+            // Always include Amazon + Flipkart + Myntra + Ajio (4 core platforms)
+            const alwaysShow = ['amazon', 'flipkart', 'myntra', 'ajio'];
+            alwaysShow.forEach(plat => {
+                if (!prod.prices[plat]) {
+                    const pct = (shifted[plat] ?? 0) / 100;
+                    prod.prices[plat] = {
+                        price:       Math.round(basePrice * (1 + pct)),
+                        mrp:         baseMrp,
+                        url:         urls[plat],
+                        inStock:     true,
+                        lastUpdated: new Date(),
+                        _simulated:  true,
+                    };
+                } else {
+                    // Fix URL for real scraped entries too (scraped URLs can be empty)
+                    if (!prod.prices[plat].url) prod.prices[plat].url = urls[plat];
+                }
+            });
+
+            // Add Croma + Reliance for electronics; keep all 4 for fashion
+            const q = searchQuery.toLowerCase();
+            if (q.match(/phone|mobile|laptop|tv|television|earphone|headphone|speaker|camera|tablet|watch|ac|refrigerator|fridge/)) {
+                ['croma', 'reliance'].forEach(plat => {
+                    if (!prod.prices[plat]) {
+                        const pct = (shifted[plat] ?? 3) / 100;
+                        prod.prices[plat] = {
+                            price:       Math.round(basePrice * (1 + pct)),
+                            mrp:         baseMrp,
+                            url:         urls[plat],
+                            inStock:     true,
+                            lastUpdated: new Date(),
+                            _simulated:  true,
+                        };
+                    }
+                });
+            }
+        });
+        }
+
         console.log(`✅ Aggregated: ${aggregatedProducts.length} unique products from ${allResults.length} total`);
 
         // 🔄 FALLBACK: If live scraping returned 0 results, use demo data

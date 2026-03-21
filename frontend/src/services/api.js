@@ -46,7 +46,14 @@ export const productAPI = {
 
     refresh: (id) => api.post(`/products/${id}/refresh`),
 
-    setPriceAlert: (id, data) => api.post(`/products/${id}/alert`, data)
+    setPriceAlert: (id, data) => api.post(`/products/${id}/alert`, data),
+
+    comparePrices: (productId, productName) => {
+        const params = new URLSearchParams();
+        if (productId)   params.set('product_id', productId);
+        if (productName) params.set('product_name', productName);
+        return api.get(`/compare-prices?${params}`);
+    }
 };
 
 // Auth API

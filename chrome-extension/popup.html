@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PriceTrackr</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 360px;
+    min-height: 480px;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #0f0f1a;
+    color: #e2e8f0;
+  }
+  .header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .header .logo { font-size: 22px; }
+  .header h1 { font-size: 16px; font-weight: 700; }
+  .header p { font-size: 11px; opacity: 0.8; }
+  .container { padding: 16px; }
+  .card {
+    background: #1a1a2e;
+    border: 1px solid #2d2d4e;
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .card-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #9ca3af; margin-bottom: 8px; }
+  .product-name { font-size: 13px; font-weight: 600; color: #e2e8f0; line-height: 1.4; margin-bottom: 10px; }
+  .price-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .price-label { font-size: 11px; color: #9ca3af; }
+  .price-value { font-size: 16px; font-weight: 700; color: #a78bfa; }
+  .price-value.atl { color: #10b981; }
+  .price-value.mrp { font-size: 12px; text-decoration: line-through; color: #6b7280; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; padding: 3px 8px; border-radius: 20px; font-weight: 600;
+  }
+  .badge.fake { background: #7f1d1d; color: #fca5a5; border: 1px solid #ef4444; }
+  .badge.real { background: #064e3b; color: #6ee7b7; border: 1px solid #10b981; }
+  .badge.atl  { background: #1c1917; color: #fbbf24; border: 1px solid #f59e0b; }
+  input[type="email"], input[type="number"] {
+    width: 100%; background: #0f0f1a; border: 1px solid #374151; border-radius: 6px;
+    color: #e2e8f0; padding: 8px 10px; font-size: 12px; margin-bottom: 8px;
+  }
+  input::placeholder { color: #6b7280; }
+  input:focus { outline: none; border-color: #7c3aed; }
+  select {
+    width: 100%; background: #0f0f1a; border: 1px solid #374151; border-radius: 6px;
+    color: #e2e8f0; padding: 8px 10px; font-size: 12px; margin-bottom: 8px;
+  }
+  button {
+    width: 100%; padding: 10px; border: none; border-radius: 8px; cursor: pointer;
+    font-size: 13px; font-weight: 600; transition: all 0.2s;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+  .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-secondary {
+    background: #1a1a2e; color: #9ca3af; border: 1px solid #374151; margin-top: 6px;
+  }
+  .status { font-size: 11px; color: #9ca3af; text-align: center; padding: 4px; }
+  .status.success { color: #10b981; }
+  .status.error   { color: #ef4444; }
+  .not-detected { text-align: center; padding: 30px 16px; }
+  .not-detected .icon { font-size: 40px; margin-bottom: 8px; }
+  .not-detected p { color: #9ca3af; font-size: 12px; }
+  .dash-link { display: block; text-align: center; padding: 8px; color: #7c3aed; font-size: 11px; text-decoration: none; }
+  .dash-link:hover { text-decoration: underline; }
+  .loader { display: none; text-align: center; padding: 20px; color: #9ca3af; }
+  .history-bar { display: flex; align-items: flex-end; gap: 2px; height: 40px; margin-top: 8px; }
+  .bar { flex: 1; background: #7c3aed; border-radius: 2px 2px 0 0; min-height: 4px; opacity: 0.7; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="logo">📊</div>
+  <div>
+    <h1>PriceTrackr</h1>
+    <p>Price history & alerts</p>
+  </div>
+</div>
+
+<div class="container">
+  <div id="loader" class="loader">⏳ Detecting product…</div>
+
+  <!-- Not on product page -->
+  <div id="notDetected" class="not-detected" style="display:none">
+    <div class="icon">🔍</div>
+    <p>Open an Amazon or Flipkart<br>product page to track prices.</p>
+  </div>
+
+  <!-- Product detected -->
+  <div id="productSection" style="display:none">
+    <div class="card">
+      <div class="card-title">Detected Product</div>
+      <div id="productName" class="product-name">—</div>
+
+      <div class="price-row">
+        <span class="price-label">Current Price</span>
+        <span id="currentPrice" class="price-value">—</span>
+      </div>
+      <div class="price-row">
+        <span class="price-label">MRP</span>
+        <span id="mrpPrice" class="price-value mrp">—</span>
+      </div>
+      <div class="price-row">
+        <span class="price-label">All-Time Low</span>
+        <span id="atlPrice" class="price-value atl">—</span>
+      </div>
+
+      <div id="fakeDiscountBadge" style="margin-top:8px; display:none"></div>
+
+      <div id="miniChart" class="history-bar" title="Price trend (last 7 points)"></div>
+    </div>
+
+    <!-- Set Alert -->
+    <div class="card">
+      <div class="card-title">🔔 Set Price Alert</div>
+      <input type="email" id="alertEmail" placeholder="Your email" />
+      <input type="number" id="targetPrice" placeholder="Alert when price drops to ₹" />
+      <select id="platformSelect">
+        <option value="any">Any platform</option>
+        <option value="amazon">Amazon</option>
+        <option value="flipkart">Flipkart</option>
+      </select>
+      <button class="btn-primary" id="setAlertBtn">Set Alert 🔔</button>
+      <div id="alertStatus" class="status"></div>
+    </div>
+
+    <a href="http://localhost:5173" target="_blank" class="dash-link">
+      📈 Open Full Dashboard →
+    </a>
+  </div>
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>

@@ -1,9 +1,31 @@
 const cron = require('node-cron');
 const Product = require('../models/Product');
+const PriceHistory = require('../models/PriceHistory');
 const User = require('../models/User');
 const { getAmazonPrice } = require('../scrapers/amazonScraper');
 const { getFlipkartPrice } = require('../scrapers/flipkartScraper');
 const { sendPriceDropAlert } = require('../utils/notifications');
+
+/**
+ * Save a price entry to the dedicated PriceHistory collection.
+ * Prevents duplicates: skips write if the same price was already recorded
+ * for this product+store within the last 6 hours.
+ */
+async function savePriceEntry(productId, store, price) {
+    const SIX_HOURS = 6 * 60 * 60 * 1000;
+    const cutoff = new Date(Date.now() - SIX_HOURS);
+
+    const recent = await PriceHistory.findOne({
+        product_id: productId,
+        store,
+        price,
+        timestamp: { $gte: cutoff }
+    });
+
+    if (recent) return; // Duplicate — skip
+
+    await PriceHistory.create({ product_id: productId, store, price, timestamp: new Date() });
+}
 
 /**
  * Check for price drops and send alerts
@@ -75,77 +97,82 @@ async function updateTrackedPrices() {
     console.log('📊 Updating tracked product prices...');
 
     try {
-        // Get products that have been tracked (have price alerts)
-        const users = await User.find({ 'priceAlerts.0': { $exists: true } });
-        const trackedProductIds = new Set();
+        // Fetch all products in the database to build a holistic dataset over time
+        const products = await Product.find({});
+        console.log(`Found ${products.length} registered products to update.`);
 
-        users.forEach(user => {
-            user.priceAlerts.forEach(alert => {
-                if (alert.productId) {
-                    trackedProductIds.add(alert.productId.toString());
-                }
-            });
-        });
-
-        console.log(`Found ${trackedProductIds.size} tracked products`);
-
-        // Update prices for each tracked product
-        for (const productId of trackedProductIds) {
+        for (const product of products) {
             try {
-                const product = await Product.findById(productId);
-                if (!product) continue;
+                let updated = false;
 
-                // Update Amazon price if URL exists
+                // --- Update Amazon ---
                 if (product.prices.amazon?.url) {
                     const amazonData = await getAmazonPrice(product.prices.amazon.url);
                     if (amazonData?.price) {
+                        const currentRef = product.prices.amazon.price;
                         product.prices.amazon.price = amazonData.price;
                         product.prices.amazon.inStock = amazonData.inStock;
                         product.prices.amazon.lastUpdated = new Date();
 
-                        // Add to price history
-                        product.priceHistory.push({
-                            platform: 'amazon',
-                            price: amazonData.price,
-                            inStock: amazonData.inStock,
-                            timestamp: new Date()
-                        });
+                        // Only push to embedded history if the price has materially changed
+                        if (amazonData.price !== currentRef) {
+                            product.priceHistory.push({
+                                platform: 'amazon',
+                                price: amazonData.price,
+                                inStock: amazonData.inStock,
+                                timestamp: new Date()
+                            });
+                        }
+
+                        // Always attempt to save in the standalone PriceHistory collection
+                        // (duplicate prevention is inside savePriceEntry)
+                        await savePriceEntry(product._id, 'amazon', amazonData.price);
+                        updated = true;
                     }
                 }
 
-                // Update Flipkart price if URL exists
+                // --- Update Flipkart ---
                 if (product.prices.flipkart?.url) {
                     const flipkartData = await getFlipkartPrice(product.prices.flipkart.url);
                     if (flipkartData?.price) {
+                        const currentRef = product.prices.flipkart.price;
                         product.prices.flipkart.price = flipkartData.price;
                         product.prices.flipkart.inStock = flipkartData.inStock;
                         product.prices.flipkart.lastUpdated = new Date();
 
-                        // Add to price history
-                        product.priceHistory.push({
-                            platform: 'flipkart',
-                            price: flipkartData.price,
-                            inStock: flipkartData.inStock,
-                            timestamp: new Date()
-                        });
+                        // Only push to embedded history if the price has materially changed
+                        if (flipkartData.price !== currentRef) {
+                            product.priceHistory.push({
+                                platform: 'flipkart',
+                                price: flipkartData.price,
+                                inStock: flipkartData.inStock,
+                                timestamp: new Date()
+                            });
+                        }
+
+                        // Always attempt to save in the standalone PriceHistory collection
+                        await savePriceEntry(product._id, 'flipkart', flipkartData.price);
+                        updated = true;
                     }
                 }
 
-                await product.save();
-                console.log(`✅ Updated prices for: ${product.name}`);
+                if (updated) {
+                    await product.save();
+                    console.log(`✅ Completed Sweep: ${product.name}`);
+                }
 
-                // Add delay to avoid rate limiting
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                // Generous delay to avoid overwhelming target sites/proxies
+                await new Promise(resolve => setTimeout(resolve, 3000));
 
             } catch (error) {
-                console.error(`Error updating product ${productId}:`, error.message);
+                console.error(`Error updating product ${product._id}:`, error.message);
             }
         }
 
-        console.log('✅ Price update completed');
+        console.log('✅ Global Price Dataset update completed');
 
     } catch (error) {
-        console.error('Price update error:', error);
+        console.error('Global Price update error:', error);
     }
 }
 
@@ -155,21 +182,16 @@ async function updateTrackedPrices() {
 function startPriceTracker() {
     console.log('⏰ Starting price tracker cron jobs...');
 
-    // Check for price drops every 6 hours
+    // Run both the global sweep and alert checker every 6 hours
     cron.schedule('0 */6 * * *', async () => {
-        console.log('\n⏰ Running scheduled price drop check...');
+        console.log('\n⏰ Running scheduled 6-hour global price update...');
+        await updateTrackedPrices();
+        
+        console.log('\n⏰ Running scheduled price drop checks based on new updates...');
         await checkPriceDrops();
     });
 
-    // Update tracked product prices daily at 2 AM
-    cron.schedule('0 2 * * *', async () => {
-        console.log('\n⏰ Running scheduled price update...');
-        await updateTrackedPrices();
-    });
-
-    console.log('✅ Price tracker cron jobs started');
-    console.log('   - Price drop checks: Every 6 hours');
-    console.log('   - Price updates: Daily at 2 AM');
+    console.log('✅ Price tracker cron jobs started (6-hour intervals)');
 }
 
 module.exports = {

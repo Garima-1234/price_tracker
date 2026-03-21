@@ -6,6 +6,8 @@ import Search from './pages/Search';
 import ProductDetail from './pages/ProductDetail';
 import Wishlist from './pages/Wishlist';
 import Auth from './pages/Auth';
+import Deals from './pages/Deals';
+import Alerts from './pages/Alerts';
 import AuthModal from './components/AuthModal';
 
 function App() {
@@ -48,11 +50,13 @@ function App() {
             />
 
             <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/search" element={<Search />} />
+                <Route path="/"            element={<Home />} />
+                <Route path="/search"      element={<Search />} />
                 <Route path="/product/:id" element={<ProductDetail user={user} />} />
-                <Route path="/wishlist" element={<Wishlist user={user} />} />
-                <Route path="/auth" element={<Auth onLogin={handleLogin} />} />
+                <Route path="/wishlist"    element={<Wishlist user={user} />} />
+                <Route path="/auth"        element={<Auth onLogin={handleLogin} />} />
+                <Route path="/deals"       element={<Deals />} />
+                <Route path="/alerts"      element={<Alerts user={user} />} />
             </Routes>
 
             {showAuthModal && (
@@ -66,3 +70,4 @@ function App() {
 }
 
 export default App;
+

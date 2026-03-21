@@ -9,6 +9,10 @@ dotenv.config();
 // Import routes
 const productRoutes = require('./routes/products');
 const authRoutes = require('./routes/auth');
+const alertRoutes = require('./routes/alerts');
+const recommendationRoutes = require('./routes/recommendations');
+const predictionRoutes = require('./routes/predictions');
+const scrapeRoutes = require('./routes/scrape');
 
 // Initialize Express app
 const app = express();
@@ -40,6 +44,16 @@ app.use((req, res, next) => {
 
 // Routes
 app.use('/api/products', productRoutes);
+app.use('/api/alerts', alertRoutes);
+app.use('/api/recommendations', recommendationRoutes);
+app.use('/api/predictions', predictionRoutes);
+app.use('/api/scrape', scrapeRoutes);
+app.get('/price-history', require('./controllers/productController').getPriceHistory);
+app.get('/api/price-history', require('./controllers/productController').getPriceHistoryFormatted);
+app.get('/predict-price', require('./controllers/productController').predictPrice);
+app.get('/api/predict-price', require('./controllers/productController').predictPrice);
+app.get('/compare-prices', require('./controllers/productController').comparePrices);
+app.get('/api/compare-prices', require('./controllers/productController').comparePrices);
 app.use('/api/auth', authRoutes);
 
 // Health check
@@ -85,13 +99,18 @@ app.use((req, res) => {
 // Database connection
 const connectDB = async () => {
     if (!process.env.MONGODB_URI) {
-        console.warn('⚠️  No MONGODB_URI — running without database');
+        console.warn('⚠️  No MONGODB_URI in .env — running without database');
         return;
     }
 
+    const uri = process.env.MONGODB_URI;
+    const isAtlas = uri.includes('mongodb+srv') || uri.includes('mongodb.net');
+    console.log(`🔗 Connecting to MongoDB${isAtlas ? ' Atlas' : ' Local'}...`);
+
     try {
-        await mongoose.connect(process.env.MONGODB_URI, {
-            serverSelectionTimeoutMS: 5000
+        await mongoose.connect(uri, {
+            serverSelectionTimeoutMS: 15000,
+            connectTimeoutMS: 15000,
         });
         console.log(`✅ MongoDB Connected: ${mongoose.connection.host}`);
 
@@ -100,12 +119,16 @@ const connectDB = async () => {
         await Product.collection.createIndex(
             { name: 'text', brand: 'text', category: 'text', searchKeywords: 'text' },
             { background: true }
-        ).catch(() => { /* Index may already exist */ });
+        ).catch(() => {});
         console.log('✅ Search indexes ready');
 
     } catch (error) {
         console.warn('⚠️  MongoDB not available — running without database');
         console.warn('   Scraping will still work, data won\'t persist');
+        console.warn(`   ❌ Error: ${error.message}`);
+        if (error.message.includes('IP')) {
+            console.warn('   ➡️  Go to MongoDB Atlas → Network Access → Add your current IP');
+        }
     }
 };
 

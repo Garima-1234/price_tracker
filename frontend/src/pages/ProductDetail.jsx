@@ -331,7 +331,7 @@ export default function ProductDetail({ user }) {
                     <h2 className="text-xl font-bold flex items-center gap-2 mb-5">
                         📈 Price History
                     </h2>
-                    <PriceHistoryChart productId={id} />
+                    <PriceHistoryChart productId={id} history={priceHistory} />
                 </div>
 
                 {/* Product description if present */}

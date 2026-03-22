@@ -39,9 +39,22 @@ exports.searchProducts = async (req, res) => {
             await saveProductsToDB(products, q);
         }
 
+        // If DB is connected, map real ObjectIds so product detail + history work
+        let dbIdByName = new Map();
+        try {
+            const mongoose = require('mongoose');
+            if (mongoose.connection.readyState === 1 && products?.length) {
+                const names = products.map(p => p.name).filter(Boolean);
+                const dbProducts = await Product.find({ name: { $in: names } })
+                    .select('_id name')
+                    .lean();
+                dbIdByName = new Map(dbProducts.map(p => [p.name, p._id.toString()]));
+            }
+        } catch (e) { /* DB not available */ }
+
         // Transform products for frontend
         let results = products.map(p => ({
-            _id: p._id || generateId(p.name),
+            _id: p._id || dbIdByName.get(p.name) || generateId(p.name),
             name: p.name,
             image: p.image,
             brand: p.brand || '',
@@ -419,8 +432,8 @@ exports.predictPrice = async (req, res) => {
 
 /**
  * Get formatted price history from standalone PriceHistory collection
- * GET /price-history?product_id=ID
- * Response: { dates: ["1 Mar", ...], prices: [42000, ...], count: N }
+ * GET /price-history?product_id=ID&limit=10
+ * Response: { dates: ["1 Mar", ...], prices: [42000, ...], timestamps: [ISO...], count: N }
  */
 exports.getPriceHistoryFormatted = async (req, res) => {
     try {
@@ -428,6 +441,7 @@ exports.getPriceHistoryFormatted = async (req, res) => {
         if (!product_id) {
             return res.status(400).json({ success: false, error: 'product_id query parameter is required' });
         }
+        const limit = Math.max(1, Math.min(parseInt(req.query.limit || '90', 10) || 90, 365));
 
         const mongoose = require('mongoose');
         const PriceHistory = require('../models/PriceHistory');
@@ -439,7 +453,7 @@ exports.getPriceHistoryFormatted = async (req, res) => {
             records = await PriceHistory
                 .find({ product_id })
                 .sort({ timestamp: 1 })
-                .limit(90)
+                .limit(limit)
                 .lean();
         }
 
@@ -449,7 +463,7 @@ exports.getPriceHistoryFormatted = async (req, res) => {
             if (product?.priceHistory?.length) {
                 records = product.priceHistory
                     .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
-                    .slice(-90)
+                    .slice(-limit)
                     .map(h => ({ price: h.price, timestamp: h.timestamp }));
             }
         }
@@ -459,8 +473,9 @@ exports.getPriceHistoryFormatted = async (req, res) => {
             new Date(r.timestamp).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
         );
         const prices = records.map(r => r.price);
+        const timestamps = records.map(r => new Date(r.timestamp).toISOString());
 
-        return res.json({ success: true, dates, prices, count });
+        return res.json({ success: true, dates, prices, timestamps, count });
     } catch (error) {
         return res.status(500).json({ success: false, error: error.message });
     }

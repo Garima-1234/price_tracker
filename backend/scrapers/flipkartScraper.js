@@ -11,6 +11,118 @@ function getRandomUA() {
     return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
 }
 
+function normalizeFlipkartImage(url) {
+    if (!url) return '';
+    return url
+        .replace('{@width}', '612')
+        .replace('{@height}', '612')
+        .replace('{@quality}', '80');
+}
+
+function extractInitialState(html) {
+    const marker = 'window.__INITIAL_STATE__';
+    const idx = html.indexOf(marker);
+    if (idx === -1) return null;
+    const start = html.indexOf('{', idx);
+    if (start === -1) return null;
+    let depth = 0;
+    let end = null;
+    for (let i = start; i < html.length; i++) {
+        const ch = html[i];
+        if (ch === '{') depth++;
+        else if (ch === '}') {
+            depth--;
+            if (depth === 0) {
+                end = i + 1;
+                break;
+            }
+        }
+    }
+    if (!end) return null;
+    try {
+        return JSON.parse(html.slice(start, end));
+    } catch (e) {
+        return null;
+    }
+}
+
+function extractJsonLdUrlMap($) {
+    const map = new Map();
+    const scripts = $('script[type="application/ld+json"]');
+    scripts.each((_, el) => {
+        const text = $(el).html();
+        if (!text) return;
+        try {
+            const parsed = JSON.parse(text);
+            const blocks = Array.isArray(parsed) ? parsed : [parsed];
+            blocks.forEach(block => {
+                if (block?.['@type'] === 'ItemList' || block?.itemListElement) {
+                    const items = block.itemListElement || [];
+                    items.forEach(item => {
+                        if (item?.name && item?.url) {
+                            map.set(item.name.toLowerCase(), item.url);
+                        }
+                    });
+                }
+            });
+        } catch (e) {
+            // ignore malformed JSON-LD blocks
+        }
+    });
+    return map;
+}
+
+function pickPrice(pricing) {
+    if (!pricing || typeof pricing !== 'object') return null;
+    if (pricing.finalPrice?.value) return pricing.finalPrice.value;
+    if (Array.isArray(pricing.prices)) {
+        const special = pricing.prices.find(p => p?.priceType === 'SPECIAL_PRICE' && p?.value);
+        if (special?.value) return special.value;
+        const fsp = pricing.prices.find(p => p?.priceType === 'FSP' && p?.value);
+        if (fsp?.value) return fsp.value;
+    }
+    return null;
+}
+
+function extractProductsFromInitialState(state, urlMap) {
+    const products = [];
+    const seen = new Set();
+
+    function walk(obj) {
+        if (!obj) return;
+        if (Array.isArray(obj)) {
+            obj.forEach(walk);
+            return;
+        }
+        if (typeof obj !== 'object') return;
+
+        if (typeof obj.title === 'string' && obj.pricing && obj.productId) {
+            const name = obj.title.trim();
+            const price = pickPrice(obj.pricing);
+            if (name && price && !seen.has(name.toLowerCase())) {
+                const image = normalizeFlipkartImage(obj.imageUrl || '');
+                const url = obj.productUrl || urlMap.get(name.toLowerCase()) || '';
+                const rating = typeof obj.averageRating === 'number' ? obj.averageRating : 0;
+                products.push({
+                    name,
+                    price,
+                    image,
+                    url,
+                    rating,
+                    platform: 'flipkart',
+                    inStock: true
+                });
+                seen.add(name.toLowerCase());
+            }
+        }
+
+        Object.values(obj).forEach(walk);
+    }
+
+    walk(state);
+    return products;
+}
+
 /**
  * Scrape products from Flipkart using HTTP + Cheerio
  */
@@ -114,6 +226,16 @@ async function scrapeFlipkart(query) {
                     }
                 } catch (e) { /* skip */ }
             });
+        }
+
+        // Approach 3: Parse embedded initial state (SSR JSON) + JSON-LD URLs
+        if (products.length === 0) {
+            const state = extractInitialState(html);
+            if (state) {
+                const urlMap = extractJsonLdUrlMap($);
+                const parsed = extractProductsFromInitialState(state, urlMap);
+                parsed.slice(0, 10).forEach(p => products.push(p));
+            }
         }
 
         console.log(`✅ Flipkart: Found ${products.length} products`);

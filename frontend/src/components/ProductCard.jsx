@@ -1,17 +1,33 @@
 import { Link } from 'react-router-dom';
 import { TrendingDown, Star, ExternalLink } from 'lucide-react';
 
+const PLATFORM_COLORS = {
+    amazon: { bg: '#FF9900', text: 'white' },
+    flipkart: { bg: '#2874F0', text: 'white' },
+    myntra: { bg: '#FF3F6C', text: 'white' },
+    ajio: { bg: '#2C55BF', text: 'white' },
+};
+
 export default function ProductCard({ product }) {
     const lowestPrice = product.lowestPrice || product.lowestPriceInfo?.price;
     const lowestPlatform = product.lowestPriceInfo?.platform;
 
-    // Calculate discount if we have multiple prices
-    const prices = Object.values(product.prices || {})
-        .filter(p => p?.price)
-        .map(p => p.price);
+    // Get all prices with platform info - only show real prices (not simulated)
+    const allPrices = Object.entries(product.prices || {})
+        .filter(([_, p]) => p?.price && !p._simulated)
+        .map(([platform, data]) => ({
+            platform,
+            price: data.price,
+            url: data.url
+        }))
+        .sort((a, b) => a.price - b.price);
 
-    const maxPrice = prices.length > 0 ? Math.max(...prices) : null;
-    const discount = maxPrice && lowestPrice ? Math.round(((maxPrice - lowestPrice) / maxPrice) * 100) : 0;
+    const realPlatformCount = allPrices.length;
+    const maxPrice = realPlatformCount > 1 ? Math.max(...allPrices.map(p => p.price)) : null;
+    const discount = maxPrice && lowestPrice ? Math.round(((maxPrice - lowestPrice) / maxPrice * 100)) : 0;
+
+    // Show up to 3 prices in compact format
+    const displayPrices = allPrices.slice(0, 3);
 
     return (
         <Link to={`/product/${product._id}`}>
@@ -67,10 +83,22 @@ export default function ProductCard({ product }) {
                                     )}
                                 </div>
 
+                                {/* All platform prices */}
+                                <div className="mt-2 space-y-1">
+                                    {displayPrices.map((item, idx) => (
+                                        <div key={item.platform} className="flex items-center justify-between text-xs">
+                                            <span className="px-1.5 py-0.5 rounded text-white font-medium" style={{ backgroundColor: PLATFORM_COLORS[item.platform]?.bg || '#6b7280' }}>
+                                                {item.platform.charAt(0).toUpperCase() + item.platform.slice(1)}
+                                            </span>
+                                            <span className="font-semibold text-gray-700">₹{item.price.toLocaleString()}</span>
+                                        </div>
+                                    ))}
+                                </div>
+
                                 {/* Platform count */}
-                                <div className="flex items-center space-x-1 mt-2 text-sm text-gray-600">
-                                    <TrendingDown className="w-4 h-4" />
-                                    <span>Available on {Object.keys(product.prices || {}).filter(k => product.prices[k]?.price).length} platforms</span>
+                                <div className="flex items-center space-x-1 mt-2 text-xs text-gray-500">
+                                    <TrendingDown className="w-3 h-3" />
+                                    <span>{realPlatformCount} platform{realPlatformCount !== 1 ? 's' : ''}</span>
                                 </div>
                             </>
                         ) : (

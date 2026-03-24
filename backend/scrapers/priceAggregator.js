@@ -109,7 +109,7 @@ async function aggregatePrices(searchQuery) {
 
             // Price offsets for each platform — rotated by seed so "cheapest" varies
             // offsets[i] is additive % of basePrice: negative = cheaper, positive = costlier
-            const rawOffsets = { amazon: 0, flipkart: -2, myntra: -4, ajio: -3, croma: 5, reliance: 2 };
+            const rawOffsets = { amazon: 0, flipkart: -2, myntra: -4, ajio: -3 };
 
             // Rotate cheapness: shift offsets by seed so a different platform wins per product
             const rotation = [0, 1, 2, 3, 4, 5][seed % 6]; // 0-5 shifts
@@ -126,8 +126,6 @@ async function aggregatePrices(searchQuery) {
                 flipkart: `https://www.flipkart.com/search?q=${encName}`,
                 myntra:   `https://www.myntra.com/${encName.replace(/%20/g, '-')}`,
                 ajio:     `https://www.ajio.com/search/?text=${encName}`,
-                croma:    `https://www.croma.com/search/?q=${encName}`,
-                reliance: `https://www.reliancedigital.in/search?q=${encName}:relevance`,
             };
 
             // Always include Amazon + Flipkart + Myntra + Ajio (4 core platforms)
@@ -149,23 +147,8 @@ async function aggregatePrices(searchQuery) {
                 }
             });
 
-            // Add Croma + Reliance for electronics; keep all 4 for fashion
-            const q = searchQuery.toLowerCase();
-            if (q.match(/phone|mobile|laptop|tv|television|earphone|headphone|speaker|camera|tablet|watch|ac|refrigerator|fridge/)) {
-                ['croma', 'reliance'].forEach(plat => {
-                    if (!prod.prices[plat]) {
-                        const pct = (shifted[plat] ?? 3) / 100;
-                        prod.prices[plat] = {
-                            price:       Math.round(basePrice * (1 + pct)),
-                            mrp:         baseMrp,
-                            url:         urls[plat],
-                            inStock:     true,
-                            lastUpdated: new Date(),
-                            _simulated:  true,
-                        };
-                    }
-                });
-            }
+            // Electronics platforms - removed Croma and Reliance
+            // Only Amazon, Flipkart, Myntra, Ajio for now
         });
         }
 

@@ -125,4 +125,8 @@ productSchema.pre('save', function (next) {
   next();
 });
 
+// Ensure virtuals are included in JSON
+productSchema.set('toJSON', { virtuals: true });
+productSchema.set('toObject', { virtuals: true });
+
 module.exports = mongoose.model('Product', productSchema);

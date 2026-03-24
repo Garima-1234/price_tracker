@@ -99,9 +99,11 @@ function hasMyntraProducts(data) {
 async function fetchMyntraApi(query) {
     const encoded = encodeURIComponent(query);
     const urls = [
-        `https://www.myntra.com/gateway/v2/search/${encoded}?p=1&rows=10&sort=popularity`,
+        // Try Myntra's internal search API
+        `https://www.myntra.com/gateway/v2/search/${encoded}?p=1&rows=10&sort=popularity&source=web`,
         `https://www.myntra.com/gateway/v2/search/${encoded}?p=1&rows=10&o=0&plaEnabled=false`,
-        `https://www.myntra.com/gateway/v2/search/${encoded}?p=1&rows=10`
+        // Try direct search page
+        `https://www.myntra.com/${encoded.replace(/%20/g, '-')}`
     ];
 
     for (const url of urls) {
@@ -123,7 +125,7 @@ async function fetchMyntraApi(query) {
                     'X-Requested-With': 'XMLHttpRequest',
                     'X-Location-Country': 'IN',
                 },
-                timeout: 12000,
+                timeout: 8000,
                 validateStatus: () => true,
             });
 

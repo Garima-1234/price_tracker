@@ -545,6 +545,7 @@ exports.comparePrices = async (req, res) => {
 
         const results = Object.entries(product.prices)
             .map(([platform, data]) => {
+                // Skip simulated prices - only show platforms where product was actually found
                 if (data?._simulated) return null;
                 const price = normalizePrice(data?.price);
                 if (!price) return null;

@@ -271,47 +271,11 @@ export default function ProductDetail({ user }) {
                                         );
                                     })}
                                 </div>
-                            ) : availablePrices.length > 0 ? (
-                                // Fallback: show existing DB prices while waiting or if scrape failed
-                                <div className="space-y-3">
-                                    {availablePrices.map((item, index) => {
-                                        const meta = PLATFORM_META[item.platform] || { label: item.platform, color: '#6b7280', bg: '#f9fafb' };
-                                        const savings = lowestPrice && item.price > lowestPrice.price
-                                            ? Math.round((item.price - lowestPrice.price) / lowestPrice.price * 100)
-                                            : 0;
-                                        return (
-                                            <div
-                                                key={item.platform}
-                                                className={`flex items-center justify-between p-3 rounded-xl border-2 transition-all hover:shadow-md ${index === 0 ? 'border-green-400 bg-green-50' : 'border-gray-100 bg-white'}`}
-                                            >
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: meta.bg }}>
-                                                        <span className="text-xs font-black" style={{ color: meta.color }}>{meta.label.substring(0,2).toUpperCase()}</span>
-                                                    </div>
-                                                    <div>
-                                                        <p className="font-semibold text-sm">{meta.label}</p>
-                                                        <p className="text-xs text-gray-400">{item.inStock !== false ? '✅ In Stock' : '❌ Out of Stock'}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-3">
-                                                    <div className="text-right">
-                                                        <p className="font-black text-lg text-gray-900">₹{item.price.toLocaleString('en-IN')}</p>
-                                                        {savings > 0 && <p className="text-xs text-red-500 font-medium">{savings}% Costlier</p>}
-                                                        {index === 0 && <span className="text-xs bg-green-500 text-white font-bold px-2 py-0.5 rounded-full">🏆 Lowest</span>}
-                                                    </div>
-                                                    {item.url && (
-                                                        <a href={item.url} target="_blank" rel="noopener noreferrer"
-                                                            className="flex items-center gap-1 text-white px-3 py-2 rounded-lg font-bold text-xs"
-                                                            style={{ background: meta.color }}
-                                                        >Buy <ExternalLink className="w-3 h-3" /></a>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
                             ) : (
-                                <p className="text-gray-400 text-sm text-center py-6">No price data available. Try refreshing.</p>
+                                <div className="text-center py-8 text-gray-400">
+                                    <p className="text-sm">No price comparison available for this product</p>
+                                    <p className="text-xs mt-1">Try searching for this product to get live prices</p>
+                                </div>
                             )}
                         </div>
                     </div>

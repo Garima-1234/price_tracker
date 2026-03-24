@@ -79,12 +79,16 @@ function extractJsonFromHtml($) {
 
 function hasAjioProducts(data) {
     if (!data) return false;
+    // Check various possible product locations in Ajio response
     const candidates = [
         data.products,
         data.searchData?.products,
         data.data?.products,
         data.response?.docs,
-        data.results
+        data.results,
+        data.pdpProducts,
+        data.algoliasearch?.hits,
+        data.items
     ];
     return candidates.some(arr => Array.isArray(arr) && arr.length > 0);
 }
@@ -92,9 +96,10 @@ function hasAjioProducts(data) {
 async function fetchAjioApi(query) {
     const encoded = encodeURIComponent(query);
     const urls = [
-        `https://www.ajio.com/api/search?searchQuery=${encoded}&gridColumns=3&from=0&size=10`,
-        `https://www.ajio.com/api/search?query=${encoded}&gridColumns=3&from=0&size=10`,
-        `https://www.ajio.com/api/search?text=${encoded}&gridColumns=3&from=0&size=10`
+        `https://www.ajio.com/api/search?query=${encoded}&gridColumns=3&from=0&size=20&sortBy=relevance`,
+        `https://www.ajio.com/api/search?text=${encoded}&gridColumns=3&from=0&size=20`,
+        `https://www.ajio.com/api/search?searchQuery=${encoded}&gridColumns=3&from=0&size=20`,
+        `https://www.ajio.com/search/?text=${encoded}`
     ];
 
     for (const url of urls) {

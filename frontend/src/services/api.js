@@ -52,7 +52,7 @@ export const productAPI = {
         const params = new URLSearchParams();
         if (productId)   params.set('product_id', productId);
         if (productName) params.set('product_name', productName);
-        return api.get(`/compare-prices?${params}`);
+        return api.get(`/api/compare-prices?${params}`);
     }
 };
 

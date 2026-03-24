@@ -66,6 +66,32 @@ app.get('/health', (req, res) => {
     });
 });
 
+// Debug env vars
+app.get('/debug-env', (req, res) => {
+    const isProd = process.env.NODE_ENV === 'production';
+    res.json({
+        // Show status for all env vars
+        env: {
+            MONGODB_URI: process.env.MONGODB_URI ? '✓' : '✗',
+            JWT_SECRET: process.env.JWT_SECRET ? '✓' : '✗',
+            FRONTEND_URL: process.env.FRONTEND_URL ? '✓' : '✗',
+            SCRAPERAPI_KEY: process.env.SCRAPERAPI_KEY ? '✓' : '✗',
+            SIMULATE_PRICES: process.env.SIMULATE_PRICES || '✗',
+            NODE_ENV: process.env.NODE_ENV || 'not set'
+        },
+        // Only show actual values in development
+        ...(isProd ? {} : {
+            values: {
+                MONGODB_URI: process.env.MONGODB_URI ? process.env.MONGODB_URI.substring(0, 30) + '...' : null,
+                JWT_SECRET: process.env.JWT_SECRET ? '***' : null,
+                FRONTEND_URL: process.env.FRONTEND_URL,
+                SCRAPERAPI_KEY: process.env.SCRAPERAPI_KEY ? process.env.SCRAPERAPI_KEY.substring(0, 10) + '...' : null,
+                SIMULATE_PRICES: process.env.SIMULATE_PRICES
+            }
+        })
+    });
+});
+
 // Root route
 app.get('/', (req, res) => {
     res.json({

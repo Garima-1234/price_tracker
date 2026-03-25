@@ -36,6 +36,14 @@ async function aggregatePrices(searchQuery) {
 
         console.log(`📊 Results — Amazon: ${amazonResults.length}, Flipkart: ${flipkartResults.length}, Myntra: ${myntraResults.length}, Ajio: ${ajioResults.length}`);
 
+        // Store platform counts for frontend display
+        const platformCounts = {
+            amazon: amazonResults.length,
+            flipkart: flipkartResults.length,
+            myntra: myntraResults.length,
+            ajio: ajioResults.length
+        };
+
         // Collect all products and group by similar names
         const productMap = new Map();
         const allResults = [...amazonResults, ...flipkartResults, ...myntraResults, ...ajioResults];
@@ -167,7 +175,11 @@ async function aggregatePrices(searchQuery) {
             console.log(`✅ Demo data: ${aggregatedProducts.length} products loaded`);
         }
 
-        return aggregatedProducts;
+        // Return products with platform counts for frontend display
+        return {
+            products: aggregatedProducts,
+            platformCounts
+        };
 
     } catch (error) {
         console.error('❌ Price aggregation error:', error.message);
@@ -175,11 +187,14 @@ async function aggregatePrices(searchQuery) {
         // Even on total failure, return demo data so the app doesn't break
         console.log(`🆘 Total failure — falling back to demo data for: "${searchQuery}"`);
         const demoProducts = getDemoProducts(searchQuery);
-        return demoProducts.map(p => ({
-            ...p,
-            searchKeywords: searchQuery.split(' '),
-            _isDemo: true
-        }));
+        return {
+            products: demoProducts.map(p => ({
+                ...p,
+                searchKeywords: searchQuery.split(' '),
+                _isDemo: true
+            })),
+            platformCounts: { amazon: 0, flipkart: 0, myntra: 0, ajio: 0 }
+        };
     }
 }
 

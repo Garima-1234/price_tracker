@@ -24,16 +24,21 @@ exports.searchProducts = async (req, res) => {
         let fromCache = false;
 
         // Check cache first
+        let platformCounts = {};
         if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
             console.log(`✅ Cache HIT for: "${q}"`);
             products = cached.products;
             fromCache = true;
+            platformCounts = cached.platformCounts || {};
         } else {
             console.log(`🔄 Cache MISS — scraping for: "${q}"`);
-            products = await aggregatePrices(q);
-
+            const aggregationResult = await aggregatePrices(q);
+            // Handle new response format { products: [], platformCounts: {} }
+            products = aggregationResult.products || aggregationResult || [];
+            platformCounts = aggregationResult.platformCounts || {};
+            
             // Save to cache
-            searchCache.set(cacheKey, { products, timestamp: Date.now() });
+            searchCache.set(cacheKey, { products, timestamp: Date.now(), platformCounts });
 
             // Save to DB if connected
             await saveProductsToDB(products, q);
@@ -52,8 +57,16 @@ exports.searchProducts = async (req, res) => {
             }
         } catch (e) { /* DB not available */ }
 
+        // Only keep real (non-simulated) prices for accurate data
+        const realProducts = (products || []).filter(p => !p?._isDemo);
+
+        const filteredProducts = realProducts.map(p => {
+            const realPrices = filterRealPrices(p.prices);
+            return { ...p, prices: realPrices };
+        }).filter(p => Object.keys(p.prices || {}).length > 0);
+
         // Transform products for frontend
-        let results = products.map(p => ({
+        let results = filteredProducts.map(p => ({
             _id: p._id || dbIdByName.get(p.name) || generateId(p.name),
             name: p.name,
             image: p.image,
@@ -68,6 +81,12 @@ exports.searchProducts = async (req, res) => {
         }));
 
         // Apply filters
+        // Relevance filter - only show products that contain the search keywords
+        const searchKeywords = buildQueryTokens(q);
+        if (searchKeywords.length > 0) {
+            results = results.filter(p => matchesQuery(p.name, q, searchKeywords));
+        }
+
         if (platform !== 'all') {
             results = results.filter(p => p.prices[platform]?.price);
         }
@@ -91,11 +110,15 @@ exports.searchProducts = async (req, res) => {
                 break;
         }
 
+        // Recompute platform counts from real data only
+        const realPlatformCounts = countPlatforms(results);
+
         res.json({
             success: true,
             query: q,
             count: results.length,
             fromCache,
+            platformCounts: realPlatformCounts,
             products: results
         });
 
@@ -353,6 +376,64 @@ function normalizePrice(value) {
         return normalizePrice(candidate);
     }
     return null;
+}
+
+function filterRealPrices(prices) {
+    if (!prices) return {};
+    const filtered = {};
+    Object.entries(prices).forEach(([platform, data]) => {
+        if (!data || data._simulated) return;
+        const price = normalizePrice(data.price);
+        if (!price) return;
+        filtered[platform] = {
+            ...data,
+            price
+        };
+    });
+    return filtered;
+}
+
+function normalizeForMatch(text) {
+    return (text || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function buildQueryTokens(query) {
+    const cleaned = normalizeForMatch(query);
+    if (!cleaned) return [];
+
+    // Split letter-number boundaries: "iphone16" => "iphone 16"
+    const split = cleaned.replace(/([a-z])([0-9])/g, '$1 $2').replace(/([0-9])([a-z])/g, '$1 $2');
+    const raw = split.split(' ').filter(Boolean);
+
+    // Remove very common/noisy tokens
+    const commonWords = new Set(['for', 'with', 'and', 'the', 'pack', 'set', 'of', 'size', 'color']);
+    return raw.filter(k => k.length > 1 && !commonWords.has(k));
+}
+
+function matchesQuery(productName, originalQuery, tokens) {
+    const nameNorm = normalizeForMatch(productName).replace(/\s+/g, '');
+    const queryNorm = normalizeForMatch(originalQuery).replace(/\s+/g, '');
+    if (!nameNorm || !queryNorm) return false;
+
+    // Direct normalized containment handles "iphone16" vs "iphone 16"
+    if (nameNorm.includes(queryNorm)) return true;
+
+    // Otherwise, require all significant tokens to be present
+    return tokens.every(t => nameNorm.includes(t));
+}
+
+function countPlatforms(results) {
+    const counts = { amazon: 0, flipkart: 0, myntra: 0, ajio: 0 };
+    results.forEach(p => {
+        Object.keys(p.prices || {}).forEach(platform => {
+            if (p.prices[platform]?.price) counts[platform] = (counts[platform] || 0) + 1;
+        });
+    });
+    return counts;
 }
 
 async function saveProductsToDB(products, searchQuery) {

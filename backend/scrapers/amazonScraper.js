@@ -81,4 +81,50 @@ async function scrapeAmazon(query) {
     }
 }
 
-module.exports = { scrapeAmazon, searchProducts: scrapeAmazon };
+/**
+ * Fetch single product price from an Amazon product page URL
+ * Returns { price, inStock }
+ */
+async function getAmazonPrice(productUrl) {
+    try {
+        if (!productUrl) return null;
+        const targetUrl = productUrl;
+        const url = process.env.SCRAPERAPI_KEY
+            ? `http://api.scraperapi.com/?api_key=${process.env.SCRAPERAPI_KEY}&url=${encodeURIComponent(targetUrl)}&country_code=in`
+            : targetUrl;
+
+        const { data: html } = await axios.get(url, {
+            headers: {
+                'User-Agent': getRandomUA(),
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-IN,en-GB;q=0.9,en-US;q=0.8,en;q=0.7,hi;q=0.6',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'DNT': '1',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1',
+                'Cache-Control': 'max-age=0',
+            },
+            timeout: 20000,
+        });
+
+        const $ = cheerio.load(html);
+        const priceText =
+            $('#priceblock_ourprice').first().text() ||
+            $('#priceblock_dealprice').first().text() ||
+            $('#priceblock_saleprice').first().text() ||
+            $('.a-price .a-offscreen').first().text() ||
+            '';
+        const price = parseInt((priceText || '').replace(/[^0-9]/g, ''), 10);
+
+        const availabilityText = $('#availability').text().toLowerCase();
+        const inStock = availabilityText.includes('in stock') || availabilityText.includes('available');
+
+        if (!price || Number.isNaN(price)) return null;
+        return { price, inStock };
+    } catch (error) {
+        console.error('Amazon price fetch error:', error.message);
+        return null;
+    }
+}
+
+module.exports = { scrapeAmazon, searchProducts: scrapeAmazon, getAmazonPrice };

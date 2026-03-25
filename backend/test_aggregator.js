@@ -13,7 +13,8 @@ async function main() {
     console.log('Testing search for: "tshirt"\n');
     
     try {
-        const results = await aggregatePrices('tshirt');
+        const agg = await aggregatePrices('tshirt');
+        const results = agg?.products || agg || [];
         console.log('\n=== Results ===');
         console.log('Total products:', results.length);
         

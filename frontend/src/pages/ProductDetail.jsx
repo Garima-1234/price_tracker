@@ -34,7 +34,6 @@ export default function ProductDetail({ user }) {
 
     useEffect(() => {
         loadProduct();
-        loadComparePrices();
         loadPriceHistory();
     }, [id]);
 
@@ -50,7 +49,12 @@ export default function ProductDetail({ user }) {
     const loadProduct = async () => {
         try {
             const response = await productAPI.getById(id);
-            if (response.data.success) setProduct(response.data.product);
+            if (response.data.success) {
+                setProduct(response.data.product);
+                if (response.data.product?.name) {
+                    loadComparePrices(response.data.product.name);
+                }
+            }
         } catch (err) {
             console.error('Load product error:', err);
         } finally {
@@ -58,11 +62,11 @@ export default function ProductDetail({ user }) {
         }
     };
 
-    const loadComparePrices = async () => {
+    const loadComparePrices = async (productName) => {
         setComparePricesLoading(true);
         try {
             // Pass product_id so backend resolves the name from DB, or nothing on first load
-            const response = await productAPI.comparePrices(id, null);
+            const response = await productAPI.comparePrices(id, productName || null);
             if (response.data.success) setComparePricesData(response.data.results || []);
         } catch (err) {
             console.error('Compare prices error:', err);
@@ -88,7 +92,7 @@ export default function ProductDetail({ user }) {
 
     const availablePrices = useMemo(() =>
         Object.entries(product?.prices || {})
-            .filter(([_, d]) => d?.price)
+            .filter(([_, d]) => d?.price && !d?._simulated)
             .map(([platform, d]) => ({ platform, ...d }))
             .sort((a, b) => a.price - b.price),
         [product]

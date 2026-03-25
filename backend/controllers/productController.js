@@ -59,8 +59,10 @@ exports.searchProducts = async (req, res) => {
 
         // Only keep real (non-simulated) prices for accurate data
         const realProducts = (products || []).filter(p => !p?._isDemo);
+        // If everything is demo data, allow it to surface instead of returning empty
+        const baseProducts = realProducts.length > 0 ? realProducts : (products || []);
 
-        const filteredProducts = realProducts.map(p => {
+        const filteredProducts = baseProducts.map(p => {
             const realPrices = filterRealPrices(p.prices);
             return { ...p, prices: realPrices };
         }).filter(p => Object.keys(p.prices || {}).length > 0);
@@ -249,7 +251,8 @@ exports.refreshPrices = async (req, res) => {
         }
 
         // Re-scrape using product name
-        const freshProducts = await aggregatePrices(product.name);
+        const aggregationResult = await aggregatePrices(product.name);
+        const freshProducts = aggregationResult.products || aggregationResult || [];
         const match = freshProducts[0]; // Best match
 
         if (match) {
@@ -448,13 +451,16 @@ async function saveProductsToDB(products, searchQuery) {
                 if (existing) {
                     // Update prices
                     Object.keys(productData.prices || {}).forEach(platform => {
+                        const normalizedPrice = normalizePrice(productData.prices[platform]?.price);
+                        if (!normalizedPrice) return;
                         existing.prices[platform] = {
                             ...productData.prices[platform],
+                            price: normalizedPrice,
                             lastUpdated: new Date()
                         };
                         existing.priceHistory.push({
                             platform,
-                            price: productData.prices[platform].price,
+                            price: normalizedPrice,
                             inStock: productData.prices[platform].inStock !== false,
                             timestamp: new Date()
                         });
@@ -468,9 +474,11 @@ async function saveProductsToDB(products, searchQuery) {
                         searchKeywords: searchQuery.split(' ')
                     });
                     Object.keys(productData.prices || {}).forEach(platform => {
+                        const normalizedPrice = normalizePrice(productData.prices[platform]?.price);
+                        if (!normalizedPrice) return;
                         newProduct.priceHistory.push({
                             platform,
-                            price: productData.prices[platform].price,
+                            price: normalizedPrice,
                             inStock: productData.prices[platform].inStock !== false,
                             timestamp: new Date()
                         });
@@ -606,7 +614,8 @@ exports.comparePrices = async (req, res) => {
         
         // 3. If still not found, trigger an aggregation
         if (!product && searchQuery) {
-            const freshProducts = await aggregatePrices(searchQuery);
+            const aggregationResult = await aggregatePrices(searchQuery);
+            const freshProducts = aggregationResult.products || aggregationResult || [];
             if (freshProducts.length > 0) {
                 // Find exact match or take best
                 product = freshProducts.find(p => p.name === searchQuery) || freshProducts[0];

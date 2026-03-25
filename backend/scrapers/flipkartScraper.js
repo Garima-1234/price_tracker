@@ -246,4 +246,47 @@ async function scrapeFlipkart(query) {
     }
 }
 
-module.exports = { scrapeFlipkart, searchProducts: scrapeFlipkart };
+/**
+ * Fetch single product price from a Flipkart product page URL
+ * Returns { price, inStock }
+ */
+async function getFlipkartPrice(productUrl) {
+    try {
+        if (!productUrl) return null;
+        const targetUrl = productUrl;
+        const url = process.env.SCRAPERAPI_KEY
+            ? `http://api.scraperapi.com/?api_key=${process.env.SCRAPERAPI_KEY}&url=${encodeURIComponent(targetUrl)}&country_code=in`
+            : targetUrl;
+
+        const { data: html } = await axios.get(url, {
+            headers: {
+                'User-Agent': getRandomUA(),
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-IN,en-GB;q=0.9,en-US;q=0.8,en;q=0.7,hi;q=0.6',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'DNT': '1',
+                'Connection': 'keep-alive',
+            },
+            timeout: 20000,
+        });
+
+        const $ = cheerio.load(html);
+        const priceText =
+            $('._30jeq3').first().text() ||
+            $('.Nx9bqj').first().text() ||
+            $('._16Jk6d').first().text() ||
+            '';
+        const price = parseInt((priceText || '').replace(/[^0-9]/g, ''), 10);
+
+        const pageText = $('body').text().toLowerCase();
+        const inStock = !pageText.includes('out of stock') && !pageText.includes('sold out');
+
+        if (!price || Number.isNaN(price)) return null;
+        return { price, inStock };
+    } catch (error) {
+        console.error('Flipkart price fetch error:', error.message);
+        return null;
+    }
+}
+
+module.exports = { scrapeFlipkart, searchProducts: scrapeFlipkart, getFlipkartPrice };

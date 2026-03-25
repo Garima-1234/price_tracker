@@ -11,6 +11,7 @@ export default function Search() {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [platformCounts, setPlatformCounts] = useState({});
 
     const [filters, setFilters] = useState({
         sort: 'relevance',
@@ -34,6 +35,7 @@ export default function Search() {
 
             if (response.data.success) {
                 setProducts(response.data.products);
+                setPlatformCounts(response.data.platformCounts || {});
             }
         } catch (err) {
             setError(err.response?.data?.error || 'Failed to search products');
@@ -60,7 +62,29 @@ export default function Search() {
                         Search Results for "<span className="gradient-text">{query}</span>"
                     </h1>
                     {!loading && products.length > 0 && (
-                        <p className="text-gray-600">Found {products.length} products</p>
+                        <div>
+                            <p className="text-gray-600">Found {products.length} products</p>
+                            {/* Platform breakdown from scraping */}
+                            {Object.keys(platformCounts).length > 0 && (
+                                <div className="flex flex-wrap gap-3 mt-3">
+                                    <span className="text-sm text-gray-500">Scraped from:</span>
+                                    {Object.entries(platformCounts).map(([platform, count]) => (
+                                        count > 0 && (
+                                            <span 
+                                                key={platform}
+                                                className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700"
+                                            >
+                                                {platform === 'amazon' && '🟠'}
+                                                {platform === 'flipkart' && '🔵'}
+                                                {platform === 'myntra' && '🩷'}
+                                                {platform === 'ajio' && '⚫'}
+                                                {platform}: {count}
+                                            </span>
+                                        )
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     )}
                 </div>
 

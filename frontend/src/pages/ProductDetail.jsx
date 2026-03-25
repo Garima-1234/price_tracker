@@ -228,9 +228,11 @@ export default function ProductDetail({ user }) {
                                     <Loader2 className="w-5 h-5 animate-spin" />
                                     <span className="text-sm">Fetching live prices from all stores…</span>
                                 </div>
-                            ) : comparePricesData.length > 0 ? (
+                            ) : comparePricesData.filter(item => item.price && item.availability !== false).length > 0 ? (
                                 <div className="space-y-3">
-                                    {comparePricesData.map((item) => {
+                                    {comparePricesData
+                                        .filter(item => item.price && item.availability !== false)
+                                        .map((item) => {
                                         const meta = PLATFORM_META[item.platform] || { label: item.store, color: '#6b7280', bg: '#f9fafb' };
                                         return (
                                             <div
@@ -276,10 +278,11 @@ export default function ProductDetail({ user }) {
                                         );
                                     })}
                                 </div>
-                            ) : availablePrices.length > 0 ? (
+                            ) : availablePrices.filter(item => item.price).length > 0 ? (
                                 // Fallback: show existing DB prices while waiting or if scrape failed
+                                // Only show platforms where the product actually exists
                                 <div className="space-y-3">
-                                    {availablePrices.map((item, index) => {
+                                    {availablePrices.filter(item => item.price).map((item, index) => {
                                         const meta = PLATFORM_META[item.platform] || { label: item.platform, color: '#6b7280', bg: '#f9fafb' };
                                         const savings = lowestPrice && item.price > lowestPrice.price
                                             ? Math.round((item.price - lowestPrice.price) / lowestPrice.price * 100)

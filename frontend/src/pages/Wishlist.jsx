@@ -10,7 +10,7 @@ export default function Wishlist({ user }) {
 
     useEffect(() => {
         if (!user) {
-            navigate('/');
+            navigate('/auth');
             return;
         }
         loadWishlist();

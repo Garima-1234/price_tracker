@@ -11,7 +11,6 @@ import PriceHistoryChart from '../components/PriceHistoryChart';
 const PLATFORM_META = {
     amazon:   { label: 'Amazon',          color: '#FF9900', bg: '#FFF7ED' },
     flipkart: { label: 'Flipkart',        color: '#2874F0', bg: '#EFF6FF' },
-    myntra:   { label: 'Myntra',          color: '#FF3F6C', bg: '#FFF1F4' },
     ajio:     { label: 'AJIO',            color: '#1a1a1a', bg: '#F5F5F5' },
     croma:    { label: 'Croma',           color: '#07645e', bg: '#ECFDF5' },
     reliance: { label: 'Reliance Digital',color: '#1E3A8A', bg: '#EFF6FF' },
@@ -36,6 +35,25 @@ export default function ProductDetail({ user }) {
         loadProduct();
         loadPriceHistory();
     }, [id]);
+
+    useEffect(() => {
+        if (!user) {
+            setInWishlist(false);
+            return;
+        }
+        const loadWishlistStatus = async () => {
+            try {
+                const response = await authAPI.getWishlist();
+                if (response.data.success) {
+                    const isWishlisted = (response.data.products || []).some(p => p?._id === id);
+                    setInWishlist(isWishlisted);
+                }
+            } catch (err) {
+                console.error('Wishlist status error:', err);
+            }
+        };
+        loadWishlistStatus();
+    }, [user, id]);
 
     const loadPriceHistory = async () => {
         try {
@@ -83,7 +101,10 @@ export default function ProductDetail({ user }) {
     };
 
     const handleWishlistToggle = async () => {
-        if (!user) return;
+        if (!user) {
+            navigate('/auth');
+            return;
+        }
         try {
             if (inWishlist) { await authAPI.removeFromWishlist(id); setInWishlist(false); }
             else            { await authAPI.addToWishlist(id);     setInWishlist(true); }
@@ -203,7 +224,7 @@ export default function ProductDetail({ user }) {
                                     {refreshing ? 'Refreshing…' : 'Refresh Prices'}
                                 </button>
                                 <button
-                                    onClick={() => setShowAlertModal(true)}
+                                    onClick={() => user ? setShowAlertModal(true) : navigate('/auth')}
                                     className="flex items-center gap-2 px-3 py-2 rounded-lg font-semibold bg-amber-50 border-2 border-amber-300 text-amber-700 hover:bg-amber-100 transition-all text-sm"
                                 >
                                     <Bell className="w-4 h-4" /> Set Alert

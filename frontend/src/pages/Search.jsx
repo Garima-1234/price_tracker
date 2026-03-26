@@ -76,7 +76,6 @@ export default function Search() {
                                             >
                                                 {platform === 'amazon' && '🟠'}
                                                 {platform === 'flipkart' && '🔵'}
-                                                {platform === 'myntra' && '🩷'}
                                                 {platform === 'ajio' && '⚫'}
                                                 {platform}: {count}
                                             </span>
@@ -127,7 +126,6 @@ export default function Search() {
                                     <option value="all">All Platforms</option>
                                     <option value="amazon">Amazon</option>
                                     <option value="flipkart">Flipkart</option>
-                                    <option value="myntra">Myntra</option>
                                     <option value="ajio">Ajio</option>
                                 </select>
                             </div>

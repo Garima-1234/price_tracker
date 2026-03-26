@@ -4,7 +4,7 @@ const priceHistorySchema = new mongoose.Schema({
   platform: {
     type: String,
     required: true,
-    enum: ['amazon', 'flipkart', 'myntra', 'ajio']
+    enum: ['amazon', 'flipkart', 'ajio']
   },
   price: { type: Number, required: true },
   mrp:   { type: Number, default: null },
@@ -39,7 +39,6 @@ const productSchema = new mongoose.Schema({
   prices: {
     amazon:   { price: Number, mrp: Number, url: String, inStock: { type: Boolean, default: true }, lastUpdated: { type: Date, default: Date.now } },
     flipkart: { price: Number, mrp: Number, url: String, inStock: { type: Boolean, default: true }, lastUpdated: { type: Date, default: Date.now } },
-    myntra:   { price: Number, mrp: Number, url: String, inStock: { type: Boolean, default: true }, lastUpdated: { type: Date, default: Date.now } },
     ajio:     { price: Number, mrp: Number, url: String, inStock: { type: Boolean, default: true }, lastUpdated: { type: Date, default: Date.now } }
   },
 
@@ -54,7 +53,6 @@ const productSchema = new mongoose.Schema({
   fakeDiscountFlags: {
     amazon:   { isFake: { type: Boolean, default: false }, reason: String, confidence: Number },
     flipkart: { isFake: { type: Boolean, default: false }, reason: String, confidence: Number },
-    myntra:   { isFake: { type: Boolean, default: false }, reason: String, confidence: Number },
     ajio:     { isFake: { type: Boolean, default: false }, reason: String, confidence: Number }
   },
 
@@ -102,7 +100,6 @@ productSchema.virtual('lowestPrice').get(function () {
   const prices = [];
   if (this.prices.amazon?.price   && this.prices.amazon.inStock)   prices.push({ price: this.prices.amazon.price,   platform: 'amazon' });
   if (this.prices.flipkart?.price && this.prices.flipkart.inStock) prices.push({ price: this.prices.flipkart.price, platform: 'flipkart' });
-  if (this.prices.myntra?.price   && this.prices.myntra.inStock)   prices.push({ price: this.prices.myntra.price,   platform: 'myntra' });
   if (this.prices.ajio?.price     && this.prices.ajio.inStock)     prices.push({ price: this.prices.ajio.price,     platform: 'ajio' });
   if (prices.length === 0) return null;
   return prices.reduce((min, p) => p.price < min.price ? p : min).price;
@@ -113,7 +110,6 @@ productSchema.virtual('lowestPriceInfo').get(function () {
   const prices = [];
   if (this.prices.amazon?.price   && this.prices.amazon.inStock)   prices.push({ price: this.prices.amazon.price,   platform: 'amazon' });
   if (this.prices.flipkart?.price && this.prices.flipkart.inStock) prices.push({ price: this.prices.flipkart.price, platform: 'flipkart' });
-  if (this.prices.myntra?.price   && this.prices.myntra.inStock)   prices.push({ price: this.prices.myntra.price,   platform: 'myntra' });
   if (this.prices.ajio?.price     && this.prices.ajio.inStock)     prices.push({ price: this.prices.ajio.price,     platform: 'ajio' });
   if (prices.length === 0) return null;
   return prices.reduce((min, p) => p.price < min.price ? p : min);

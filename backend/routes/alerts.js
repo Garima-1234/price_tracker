@@ -122,7 +122,7 @@ router.get('/check/:productId', async (req, res) => {
 
         for (const alert of alerts) {
             const platformsToCheck = alert.platform === 'any'
-                ? ['amazon', 'flipkart', 'myntra', 'ajio']
+                ? ['amazon', 'flipkart', 'ajio']
                 : [alert.platform];
 
             for (const plat of platformsToCheck) {

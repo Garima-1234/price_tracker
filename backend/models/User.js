@@ -13,7 +13,7 @@ const priceAlertSchema = new mongoose.Schema({
     },
     platform: {
         type: String,
-        enum: ['any', 'amazon', 'flipkart', 'myntra', 'ajio'],
+        enum: ['any', 'amazon', 'flipkart', 'ajio'],
         default: 'any'
     },
     active: {

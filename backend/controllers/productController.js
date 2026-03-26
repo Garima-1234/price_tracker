@@ -430,7 +430,7 @@ function matchesQuery(productName, originalQuery, tokens) {
 }
 
 function countPlatforms(results) {
-    const counts = { amazon: 0, flipkart: 0, myntra: 0, ajio: 0 };
+    const counts = { amazon: 0, flipkart: 0, ajio: 0 };
     results.forEach(p => {
         Object.keys(p.prices || {}).forEach(platform => {
             if (p.prices[platform]?.price) counts[platform] = (counts[platform] || 0) + 1;
@@ -628,15 +628,15 @@ exports.comparePrices = async (req, res) => {
 
         // 4. Format existing prices array 
         const storesMap = {
-            amazon: 'Amazon', flipkart: 'Flipkart', 
-            myntra: 'Myntra', ajio: 'AJIO',
+            amazon: 'Amazon', flipkart: 'Flipkart', ajio: 'AJIO',
             croma: 'Croma', reliance: 'Reliance Digital', vijay: 'Vijay Sales'
         };
 
         const results = Object.entries(product.prices)
             .map(([platform, data]) => {
                 const price = normalizePrice(data?.price);
-                if (!price) return null;
+                // Only show real, available platform entries
+                if (!price || data?._simulated) return null;
                 return {
                     store: storesMap[platform] || platform,
                     price,

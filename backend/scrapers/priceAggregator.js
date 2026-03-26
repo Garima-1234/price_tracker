@@ -1,6 +1,5 @@
 const amazonScraper = require('./amazonScraper');
 const flipkartScraper = require('./flipkartScraper');
-const myntraScraper = require('./myntraScraper');
 const ajioScraper = require('./ajioScraper');
 const { getDemoProducts } = require('./demoData');
 
@@ -15,7 +14,7 @@ async function aggregatePrices(searchQuery) {
         console.log(`🔍 Aggregating prices for: "${searchQuery}"`);
 
         // Scrape all platforms in parallel with individual error handling
-        const [amazonResults, flipkartResults, myntraResults, ajioResults] = await Promise.all([
+        const [amazonResults, flipkartResults, ajioResults] = await Promise.all([
             amazonScraper.searchProducts(searchQuery).catch(err => {
                 console.log('⚠️  Amazon scraping failed:', err.message);
                 return [];
@@ -24,29 +23,24 @@ async function aggregatePrices(searchQuery) {
                 console.log('⚠️  Flipkart scraping failed:', err.message);
                 return [];
             }),
-            myntraScraper.searchProducts(searchQuery).catch(err => {
-                console.log('⚠️  Myntra scraping failed:', err.message);
-                return [];
-            }),
             ajioScraper.searchProducts(searchQuery).catch(err => {
                 console.log('⚠️  Ajio scraping failed:', err.message);
                 return [];
             })
         ]);
 
-        console.log(`📊 Results — Amazon: ${amazonResults.length}, Flipkart: ${flipkartResults.length}, Myntra: ${myntraResults.length}, Ajio: ${ajioResults.length}`);
+        console.log(`📊 Results — Amazon: ${amazonResults.length}, Flipkart: ${flipkartResults.length}, Ajio: ${ajioResults.length}`);
 
         // Store platform counts for frontend display
         const platformCounts = {
             amazon: amazonResults.length,
             flipkart: flipkartResults.length,
-            myntra: myntraResults.length,
             ajio: ajioResults.length
         };
 
         // Collect all products and group by similar names
         const productMap = new Map();
-        const allResults = [...amazonResults, ...flipkartResults, ...myntraResults, ...ajioResults];
+        const allResults = [...amazonResults, ...flipkartResults, ...ajioResults];
 
         allResults.forEach(product => {
             if (!product.name || !product.price) return;
@@ -96,7 +90,7 @@ async function aggregatePrices(searchQuery) {
         let aggregatedProducts = Array.from(productMap.values());
 
         // ─── MULTI-PLATFORM PRICE ENRICHMENT ────────────────────────────────────────
-        // Since Flipkart/Myntra/Ajio block live scraping, we synthesise realistic
+        // Since Flipkart/Ajio block live scraping, we synthesise realistic
         // prices for every platform. Prices are deterministic per product (based on
         // name hash) so different products show different "lowest" platforms.
         // All platforms get correct search-result URLs.
@@ -117,10 +111,10 @@ async function aggregatePrices(searchQuery) {
 
             // Price offsets for each platform — rotated by seed so "cheapest" varies
             // offsets[i] is additive % of basePrice: negative = cheaper, positive = costlier
-            const rawOffsets = { amazon: 0, flipkart: -2, myntra: -4, ajio: -3 };
+            const rawOffsets = { amazon: 0, flipkart: -2, ajio: -3 };
 
             // Rotate cheapness: shift offsets by seed so a different platform wins per product
-            const rotation = [0, 1, 2, 3, 4, 5][seed % 6]; // 0-5 shifts
+            const rotation = [0, 1, 2, 3][seed % 4]; // 0-3 shifts
             const keys = Object.keys(rawOffsets);
             const shifted = {};
             keys.forEach((k, i) => {
@@ -132,12 +126,11 @@ async function aggregatePrices(searchQuery) {
             const urls = {
                 amazon:   `https://www.amazon.in/s?k=${encName}`,
                 flipkart: `https://www.flipkart.com/search?q=${encName}`,
-                myntra:   `https://www.myntra.com/${encName.replace(/%20/g, '-')}`,
                 ajio:     `https://www.ajio.com/search/?text=${encName}`,
             };
 
-            // Always include Amazon + Flipkart + Myntra + Ajio (4 core platforms)
-            const alwaysShow = ['amazon', 'flipkart', 'myntra', 'ajio'];
+            // Always include Amazon + Flipkart + Ajio (3 core platforms)
+            const alwaysShow = ['amazon', 'flipkart', 'ajio'];
             alwaysShow.forEach(plat => {
                 if (!prod.prices[plat]) {
                     const pct = (shifted[plat] ?? 0) / 100;
@@ -156,7 +149,7 @@ async function aggregatePrices(searchQuery) {
             });
 
             // Electronics platforms - removed Croma and Reliance
-            // Only Amazon, Flipkart, Myntra, Ajio for now
+            // Only Amazon, Flipkart, Ajio for now
         });
         }
 
@@ -193,7 +186,7 @@ async function aggregatePrices(searchQuery) {
                 searchKeywords: searchQuery.split(' '),
                 _isDemo: true
             })),
-            platformCounts: { amazon: 0, flipkart: 0, myntra: 0, ajio: 0 }
+            platformCounts: { amazon: 0, flipkart: 0, ajio: 0 }
         };
     }
 }

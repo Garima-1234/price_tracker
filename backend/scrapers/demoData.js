@@ -19,9 +19,9 @@ const categories = {
         { name: 'Apple iPhone 13 (128 GB) - Midnight', image: 'https://m.media-amazon.com/images/I/71xLP2GnnoL._SL1500_.jpg', brand: 'Apple', category: 'Smartphones', rating: 4.6, reviewCount: 68000, prices: { amazon: { price: 45900, mrp: 59900, url: 'https://www.amazon.in/s?k=iphone+13', inStock: true }, flipkart: { price: 44999, mrp: 59900, url: 'https://www.flipkart.com/search?q=iphone+13', inStock: true } } },
     ],
     'nike shoes': [
-        { name: "Nike Air Max 270 Men's Running Shoes", image: 'https://m.media-amazon.com/images/I/71HOCMFZA9L._UL1500_.jpg', brand: 'Nike', category: 'Shoes', rating: 4.4, reviewCount: 5670, prices: { amazon: { price: 9995, mrp: 12995, url: 'https://www.amazon.in/s?k=nike+air+max', inStock: true }, flipkart: { price: 8999, mrp: 12995, url: 'https://www.flipkart.com/search?q=nike+air+max', inStock: true }, myntra: { price: 8497, mrp: 12995, url: 'https://www.myntra.com/nike', inStock: true } } },
-        { name: "Nike Revolution 6 Men's Road Running Shoes", image: 'https://m.media-amazon.com/images/I/71nlu1wTRBL._UL1500_.jpg', brand: 'Nike', category: 'Shoes', rating: 4.3, reviewCount: 12400, prices: { amazon: { price: 3995, mrp: 5295, url: 'https://www.amazon.in/s?k=nike+revolution', inStock: true }, flipkart: { price: 3699, mrp: 5295, url: 'https://www.flipkart.com/search?q=nike+revolution', inStock: true }, myntra: { price: 3499, mrp: 5295, url: 'https://www.myntra.com/nike', inStock: true } } },
-        { name: "Nike Air Force 1 '07 Men's Shoes - White", image: 'https://m.media-amazon.com/images/I/61-clPy-nwL._UL1500_.jpg', brand: 'Nike', category: 'Shoes', rating: 4.6, reviewCount: 8900, prices: { amazon: { price: 7495, mrp: 9295, url: 'https://www.amazon.in/s?k=nike+air+force', inStock: true }, flipkart: { price: 7295, mrp: 9295, url: 'https://www.flipkart.com/search?q=nike+air+force', inStock: true }, myntra: { price: 6995, mrp: 9295, url: 'https://www.myntra.com/nike', inStock: true } } },
+        { name: "Nike Air Max 270 Men's Running Shoes", image: 'https://m.media-amazon.com/images/I/71HOCMFZA9L._UL1500_.jpg', brand: 'Nike', category: 'Shoes', rating: 4.4, reviewCount: 5670, prices: { amazon: { price: 9995, mrp: 12995, url: 'https://www.amazon.in/s?k=nike+air+max', inStock: true }, flipkart: { price: 8999, mrp: 12995, url: 'https://www.flipkart.com/search?q=nike+air+max', inStock: true } } },
+        { name: "Nike Revolution 6 Men's Road Running Shoes", image: 'https://m.media-amazon.com/images/I/71nlu1wTRBL._UL1500_.jpg', brand: 'Nike', category: 'Shoes', rating: 4.3, reviewCount: 12400, prices: { amazon: { price: 3995, mrp: 5295, url: 'https://www.amazon.in/s?k=nike+revolution', inStock: true }, flipkart: { price: 3699, mrp: 5295, url: 'https://www.flipkart.com/search?q=nike+revolution', inStock: true } } },
+        { name: "Nike Air Force 1 '07 Men's Shoes - White", image: 'https://m.media-amazon.com/images/I/61-clPy-nwL._UL1500_.jpg', brand: 'Nike', category: 'Shoes', rating: 4.6, reviewCount: 8900, prices: { amazon: { price: 7495, mrp: 9295, url: 'https://www.amazon.in/s?k=nike+air+force', inStock: true }, flipkart: { price: 7295, mrp: 9295, url: 'https://www.flipkart.com/search?q=nike+air+force', inStock: true } } },
     ],
     headphones: [
         { name: 'Sony WH-1000XM5 Wireless Noise Cancelling Headphones (Black)', image: 'https://m.media-amazon.com/images/I/51aXvjzcukL._SL1500_.jpg', brand: 'Sony', category: 'Headphones', rating: 4.6, reviewCount: 18700, prices: { amazon: { price: 26990, mrp: 34990, url: 'https://www.amazon.in/dp/B09XS7JWHH', inStock: true }, flipkart: { price: 27989, mrp: 34990, url: 'https://www.flipkart.com/sony-wh-1000xm5-bluetooth-headset/p/itm9ee097bc0ae76', inStock: true } } },
@@ -47,20 +47,20 @@ const categories = {
         { name: 'POCO X6 Pro 5G (12GB RAM, 256GB) - Spectre Black', image: 'https://m.media-amazon.com/images/I/71XVeA6jwBL._SL1500_.jpg', brand: 'POCO', category: 'Smartphones', rating: 4.3, reviewCount: 22000, prices: { amazon: { price: 22999, mrp: 27999, url: 'https://www.amazon.in/s?k=poco+x6+pro', inStock: true }, flipkart: { price: 21999, mrp: 27999, url: 'https://www.flipkart.com/search?q=poco+x6+pro', inStock: true } } },
     ],
     sweatshirt: [
-        { name: 'Allen Solly Men Solid Hooded Sweatshirt - Navy Blue', image: 'https://m.media-amazon.com/images/I/51Y3FAL2RUL._UL1100_.jpg', brand: 'Allen Solly', category: 'Sweatshirts', rating: 4.2, reviewCount: 8400, prices: { amazon: { price: 1099, mrp: 2199, url: 'https://www.amazon.in/s?k=sweatshirt+men', inStock: true }, flipkart: { price: 999, mrp: 2199, url: 'https://www.flipkart.com/search?q=sweatshirt', inStock: true }, myntra: { price: 899, mrp: 2199, url: 'https://www.myntra.com/sweatshirts', inStock: true }, ajio: { price: 949, mrp: 2199, url: 'https://www.ajio.com/search?q=sweatshirt', inStock: true } } },
-        { name: 'Puma Men ESS Big Logo Crew Sweatshirt - Grey', image: 'https://m.media-amazon.com/images/I/61gIF-OZHFL._UL1100_.jpg', brand: 'Puma', category: 'Sweatshirts', rating: 4.3, reviewCount: 6700, prices: { amazon: { price: 2249, mrp: 3999, url: 'https://www.amazon.in/s?k=puma+sweatshirt', inStock: true }, flipkart: { price: 2099, mrp: 3999, url: 'https://www.flipkart.com/search?q=puma+sweatshirt', inStock: true }, myntra: { price: 1999, mrp: 3999, url: 'https://www.myntra.com/sweatshirts', inStock: true }, ajio: { price: 2149, mrp: 3999, url: 'https://www.ajio.com/search?q=puma+sweatshirt', inStock: true } } },
+        { name: 'Allen Solly Men Solid Hooded Sweatshirt - Navy Blue', image: 'https://m.media-amazon.com/images/I/51Y3FAL2RUL._UL1100_.jpg', brand: 'Allen Solly', category: 'Sweatshirts', rating: 4.2, reviewCount: 8400, prices: { amazon: { price: 1099, mrp: 2199, url: 'https://www.amazon.in/s?k=sweatshirt+men', inStock: true }, flipkart: { price: 999, mrp: 2199, url: 'https://www.flipkart.com/search?q=sweatshirt', inStock: true }, ajio: { price: 949, mrp: 2199, url: 'https://www.ajio.com/search?q=sweatshirt', inStock: true } } },
+        { name: 'Puma Men ESS Big Logo Crew Sweatshirt - Grey', image: 'https://m.media-amazon.com/images/I/61gIF-OZHFL._UL1100_.jpg', brand: 'Puma', category: 'Sweatshirts', rating: 4.3, reviewCount: 6700, prices: { amazon: { price: 2249, mrp: 3999, url: 'https://www.amazon.in/s?k=puma+sweatshirt', inStock: true }, flipkart: { price: 2099, mrp: 3999, url: 'https://www.flipkart.com/search?q=puma+sweatshirt', inStock: true }, ajio: { price: 2149, mrp: 3999, url: 'https://www.ajio.com/search?q=puma+sweatshirt', inStock: true } } },
     ],
     tshirt: [
-        { name: 'US Polo Assn Men Solid Round Neck T-Shirt - Pack of 3', image: 'https://m.media-amazon.com/images/I/71wiuT3xJrL._UL1500_.jpg', brand: 'US Polo', category: 'T-Shirts', rating: 4.2, reviewCount: 45000, prices: { amazon: { price: 799, mrp: 1499, url: 'https://www.amazon.in/s?k=tshirt+men', inStock: true }, flipkart: { price: 749, mrp: 1499, url: 'https://www.flipkart.com/search?q=tshirt', inStock: true }, myntra: { price: 699, mrp: 1499, url: 'https://www.myntra.com/tshirts', inStock: true } } },
-        { name: 'Nike Dri-FIT Men Training T-Shirt - Black', image: 'https://m.media-amazon.com/images/I/61-clPy-nwL._UL1500_.jpg', brand: 'Nike', category: 'T-Shirts', rating: 4.5, reviewCount: 8700, prices: { amazon: { price: 1295, mrp: 1995, url: 'https://www.amazon.in/s?k=nike+tshirt', inStock: true }, flipkart: { price: 1195, mrp: 1995, url: 'https://www.flipkart.com/search?q=nike+tshirt', inStock: true }, myntra: { price: 1095, mrp: 1995, url: 'https://www.myntra.com/tshirts', inStock: true } } },
+        { name: 'US Polo Assn Men Solid Round Neck T-Shirt - Pack of 3', image: 'https://m.media-amazon.com/images/I/71wiuT3xJrL._UL1500_.jpg', brand: 'US Polo', category: 'T-Shirts', rating: 4.2, reviewCount: 45000, prices: { amazon: { price: 799, mrp: 1499, url: 'https://www.amazon.in/s?k=tshirt+men', inStock: true }, flipkart: { price: 749, mrp: 1499, url: 'https://www.flipkart.com/search?q=tshirt', inStock: true } } },
+        { name: 'Nike Dri-FIT Men Training T-Shirt - Black', image: 'https://m.media-amazon.com/images/I/61-clPy-nwL._UL1500_.jpg', brand: 'Nike', category: 'T-Shirts', rating: 4.5, reviewCount: 8700, prices: { amazon: { price: 1295, mrp: 1995, url: 'https://www.amazon.in/s?k=nike+tshirt', inStock: true }, flipkart: { price: 1195, mrp: 1995, url: 'https://www.flipkart.com/search?q=nike+tshirt', inStock: true } } },
     ],
     jeans: [
-        { name: "Levi's Men 511 Slim Fit Mid-Rise Jeans - Dark Blue", image: 'https://m.media-amazon.com/images/I/61tX2hNcxAL._UL1500_.jpg', brand: "Levi's", category: 'Jeans', rating: 4.3, reviewCount: 24000, prices: { amazon: { price: 2399, mrp: 3799, url: 'https://www.amazon.in/s?k=levis+jeans', inStock: true }, flipkart: { price: 2249, mrp: 3799, url: 'https://www.flipkart.com/search?q=levis+jeans', inStock: true }, myntra: { price: 2099, mrp: 3799, url: 'https://www.myntra.com/jeans', inStock: true }, ajio: { price: 2199, mrp: 3799, url: 'https://www.ajio.com/search?q=levis+jeans', inStock: true } } },
-        { name: 'Wrangler Men Slim Fit Stretchable Jeans - Black', image: 'https://m.media-amazon.com/images/I/61X+dmR3PEL._UL1500_.jpg', brand: 'Wrangler', category: 'Jeans', rating: 4.2, reviewCount: 12000, prices: { amazon: { price: 1699, mrp: 2999, url: 'https://www.amazon.in/s?k=wrangler+jeans', inStock: true }, flipkart: { price: 1599, mrp: 2999, url: 'https://www.flipkart.com/search?q=wrangler+jeans', inStock: true }, myntra: { price: 1499, mrp: 2999, url: 'https://www.myntra.com/jeans', inStock: true } } },
+        { name: "Levi's Men 511 Slim Fit Mid-Rise Jeans - Dark Blue", image: 'https://m.media-amazon.com/images/I/61tX2hNcxAL._UL1500_.jpg', brand: "Levi's", category: 'Jeans', rating: 4.3, reviewCount: 24000, prices: { amazon: { price: 2399, mrp: 3799, url: 'https://www.amazon.in/s?k=levis+jeans', inStock: true }, flipkart: { price: 2249, mrp: 3799, url: 'https://www.flipkart.com/search?q=levis+jeans', inStock: true }, ajio: { price: 2199, mrp: 3799, url: 'https://www.ajio.com/search?q=levis+jeans', inStock: true } } },
+        { name: 'Wrangler Men Slim Fit Stretchable Jeans - Black', image: 'https://m.media-amazon.com/images/I/61X+dmR3PEL._UL1500_.jpg', brand: 'Wrangler', category: 'Jeans', rating: 4.2, reviewCount: 12000, prices: { amazon: { price: 1699, mrp: 2999, url: 'https://www.amazon.in/s?k=wrangler+jeans', inStock: true }, flipkart: { price: 1599, mrp: 2999, url: 'https://www.flipkart.com/search?q=wrangler+jeans', inStock: true } } },
     ],
     jacket: [
-        { name: 'Wildcraft Men Windbreaker Jacket - Navy Blue', image: 'https://m.media-amazon.com/images/I/61dbOE-RJGL._UL1500_.jpg', brand: 'Wildcraft', category: 'Jackets', rating: 4.2, reviewCount: 5600, prices: { amazon: { price: 1999, mrp: 3499, url: 'https://www.amazon.in/s?k=jacket+men', inStock: true }, flipkart: { price: 1899, mrp: 3499, url: 'https://www.flipkart.com/search?q=jacket', inStock: true }, myntra: { price: 1799, mrp: 3499, url: 'https://www.myntra.com/jackets', inStock: true } } },
-        { name: 'Puma Men Solid Bomber Jacket - Black', image: 'https://m.media-amazon.com/images/I/71bDqoCwy7L._UL1500_.jpg', brand: 'Puma', category: 'Jackets', rating: 4.4, reviewCount: 3400, prices: { amazon: { price: 2999, mrp: 4999, url: 'https://www.amazon.in/s?k=puma+jacket', inStock: true }, flipkart: { price: 2799, mrp: 4999, url: 'https://www.flipkart.com/search?q=puma+jacket', inStock: true }, myntra: { price: 2699, mrp: 4999, url: 'https://www.myntra.com/jackets', inStock: true } } },
+        { name: 'Wildcraft Men Windbreaker Jacket - Navy Blue', image: 'https://m.media-amazon.com/images/I/61dbOE-RJGL._UL1500_.jpg', brand: 'Wildcraft', category: 'Jackets', rating: 4.2, reviewCount: 5600, prices: { amazon: { price: 1999, mrp: 3499, url: 'https://www.amazon.in/s?k=jacket+men', inStock: true }, flipkart: { price: 1899, mrp: 3499, url: 'https://www.flipkart.com/search?q=jacket', inStock: true } } },
+        { name: 'Puma Men Solid Bomber Jacket - Black', image: 'https://m.media-amazon.com/images/I/71bDqoCwy7L._UL1500_.jpg', brand: 'Puma', category: 'Jackets', rating: 4.4, reviewCount: 3400, prices: { amazon: { price: 2999, mrp: 4999, url: 'https://www.amazon.in/s?k=puma+jacket', inStock: true }, flipkart: { price: 2799, mrp: 4999, url: 'https://www.flipkart.com/search?q=puma+jacket', inStock: true } } },
     ],
     backpack: [
         { name: 'Skybags Brat 46 cms Casual Backpack - Black', image: 'https://m.media-amazon.com/images/I/81QqOhBCalL._SL1500_.jpg', brand: 'Skybags', category: 'Backpacks', rating: 4.1, reviewCount: 56000, prices: { amazon: { price: 699, mrp: 1995, url: 'https://www.amazon.in/s?k=backpack', inStock: true }, flipkart: { price: 649, mrp: 1995, url: 'https://www.flipkart.com/search?q=backpack', inStock: true } } },
@@ -151,7 +151,6 @@ function generateDynamicProducts(query) {
     }
 
     const brands = ['Generic', 'Premium', 'ProMax', 'StyleX'];
-    const platforms = ['amazon', 'flipkart', 'myntra'];
     const colors = ['Black', 'Blue', 'Grey', 'White'];
 
     return brands.slice(0, 4).map((brand, i) => {
@@ -161,7 +160,7 @@ function generateDynamicProducts(query) {
         const mrp = Math.round(brandPrice * 1.3);
         const amazonPrice = brandPrice;
         const flipkartPrice = Math.round(brandPrice * 0.97);
-        const myntraPrice = Math.round(brandPrice * 0.94);
+        const ajioPrice = Math.round(brandPrice * 0.95);
 
         return {
             name: `${brand} ${qTitle} - ${colors[i]} Edition`,
@@ -173,7 +172,7 @@ function generateDynamicProducts(query) {
             prices: {
                 amazon:   { price: amazonPrice,   mrp, url: `https://www.amazon.in/s?k=${encodeURIComponent(query)}`,   inStock: true, lastUpdated: new Date() },
                 flipkart: { price: flipkartPrice, mrp, url: `https://www.flipkart.com/search?q=${encodeURIComponent(query)}`, inStock: true, lastUpdated: new Date() },
-                myntra:   { price: myntraPrice,   mrp, url: `https://www.myntra.com/${encodeURIComponent(query).replace(/%20/g, '-')}`,   inStock: true, lastUpdated: new Date() },
+                ajio:     { price: ajioPrice,     mrp, url: `https://www.ajio.com/search/?text=${encodeURIComponent(query)}`, inStock: true, lastUpdated: new Date() },
             }
         };
     });
@@ -204,3 +203,4 @@ function getDemoProducts(query) {
 }
 
 module.exports = { getDemoProducts };
+

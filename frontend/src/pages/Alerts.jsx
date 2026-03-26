@@ -134,7 +134,6 @@ export default function Alerts({ user }) {
                                 <option value="any">Any platform</option>
                                 <option value="amazon">Amazon</option>
                                 <option value="flipkart">Flipkart</option>
-                                <option value="myntra">Myntra</option>
                                 <option value="ajio">Ajio</option>
                             </select>
                             {!user && (
@@ -193,7 +192,6 @@ function AlertCard({ alert, onDelete }) {
     const platformColors = {
         amazon: 'bg-orange-100 text-orange-700',
         flipkart: 'bg-blue-100 text-blue-700',
-        myntra: 'bg-pink-100 text-pink-700',
         ajio: 'bg-teal-100 text-teal-700',
         any: 'bg-gray-100 text-gray-600',
     };

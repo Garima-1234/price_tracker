@@ -83,7 +83,7 @@ router.post('/report', async (req, res) => {
             // Check if any alert is triggered
             const alerts = await Alert.find({ productId: product._id.toString(), active: true, triggered: false });
             for (const alert of alerts) {
-                const checkPlatforms = alert.platform === 'any' ? ['amazon', 'flipkart', 'myntra', 'ajio'] : [alert.platform];
+                const checkPlatforms = alert.platform === 'any' ? ['amazon', 'flipkart', 'ajio'] : [alert.platform];
                 for (const plat of checkPlatforms) {
                     const cp = product.prices[plat]?.price;
                     if (cp && cp <= alert.targetPrice) {

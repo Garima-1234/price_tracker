@@ -119,18 +119,17 @@ export default function PriceAlertModal({ product, onClose }) {
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
                                 Monitor on
                             </label>
-                            <select
-                                value={platform}
-                                onChange={(e) => setPlatform(e.target.value)}
-                                className="input-field"
-                            >
-                                <option value="any">All Platforms</option>
-                                <option value="amazon">Amazon</option>
-                                <option value="flipkart">Flipkart</option>
-                                <option value="myntra">Myntra</option>
-                                <option value="ajio">Ajio</option>
-                            </select>
-                        </div>
+                        <select
+                            value={platform}
+                            onChange={(e) => setPlatform(e.target.value)}
+                            className="input-field"
+                        >
+                            <option value="any">All Platforms</option>
+                            <option value="amazon">Amazon</option>
+                            <option value="flipkart">Flipkart</option>
+                            <option value="ajio">Ajio</option>
+                        </select>
+                    </div>
 
                         {/* Error */}
                         {error && (

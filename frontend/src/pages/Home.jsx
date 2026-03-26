@@ -27,7 +27,7 @@ export default function Home() {
         {
             icon: <TrendingDown className="w-8 h-8" />,
             title: 'Best Price Guaranteed',
-            description: 'Compare prices across Amazon, Flipkart, Myntra, and more'
+            description: 'Compare prices across Amazon, Flipkart, and Ajio'
         },
         {
             icon: <Zap className="w-8 h-8" />,
@@ -74,7 +74,7 @@ export default function Home() {
                     </h1>
 
                     <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto">
-                        Compare prices from Amazon, Flipkart, Myntra, and more. Save money on every purchase with real-time price tracking.
+                        Compare prices from Amazon, Flipkart, and Ajio. Save money on every purchase with real-time price tracking.
                     </p>
 
                     {/* Search Bar */}

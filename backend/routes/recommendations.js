@@ -10,7 +10,7 @@ const DEMO_RECOMMENDATIONS = [
     { _id: 'd2', name: 'Noise ColorFit Pro 3 Smart Watch', image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400', category: 'electronics', brand: 'Noise', lowestPrice: 2499, bestPlatform: 'flipkart', mrp: 6999, discountPct: 64, rating: 4.0, reviewCount: 32100, dealScore: 82.1, isFakeDiscount: false, mlTrend: 'stable' },
     { _id: 'd3', name: 'Redmi Note 12 (128GB, Mystique Blue)', image: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=400', category: 'electronics', brand: 'Redmi', lowestPrice: 12999, bestPlatform: 'amazon', mrp: 18999, discountPct: 32, rating: 4.3, reviewCount: 89000, dealScore: 74.3, isFakeDiscount: true, mlTrend: 'rising' },
     { _id: 'd4', name: 'Philips BT3211/15 Hair & Beard Trimmer', image: 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=400', category: 'personal care', brand: 'Philips', lowestPrice: 899, bestPlatform: 'flipkart', mrp: 1695, discountPct: 47, rating: 4.1, reviewCount: 12600, dealScore: 70.0, isFakeDiscount: false, mlTrend: 'stable' },
-    { _id: 'd5', name: 'Puma Men\'s Drift Cat 5 Ultra Sneakers', image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400', category: 'fashion', brand: 'Puma', lowestPrice: 1799, bestPlatform: 'myntra', mrp: 4499, discountPct: 60, rating: 4.4, reviewCount: 8900, dealScore: 68.2, isFakeDiscount: false, mlTrend: 'falling' },
+    { _id: 'd5', name: 'Puma Men\'s Drift Cat 5 Ultra Sneakers', image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400', category: 'fashion', brand: 'Puma', lowestPrice: 1799, bestPlatform: 'flipkart', mrp: 4499, discountPct: 60, rating: 4.4, reviewCount: 8900, dealScore: 68.2, isFakeDiscount: false, mlTrend: 'falling' },
     { _id: 'd6', name: 'Prestige PKPRC 2.0 Pressure Cooker 3L', image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400', category: 'kitchen', brand: 'Prestige', lowestPrice: 999, bestPlatform: 'amazon', mrp: 2095, discountPct: 52, rating: 4.5, reviewCount: 21000, dealScore: 67.5, isFakeDiscount: false, mlTrend: 'stable' },
     { _id: 'd7', name: 'Lakme 9 to 5 Primer + Matte Perfect Cover Foundation', image: 'https://images.unsplash.com/photo-1631214524020-3c69d31dea0e?w=400', category: 'beauty', brand: 'Lakme', lowestPrice: 349, bestPlatform: 'flipkart', mrp: 699, discountPct: 50, rating: 4.2, reviewCount: 5600, dealScore: 65.1, isFakeDiscount: false, mlTrend: 'stable' },
     { _id: 'd8', name: 'Crompton LED Bulb 9W (Pack of 6)', image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400', category: 'home', brand: 'Crompton', lowestPrice: 249, bestPlatform: 'amazon', mrp: 540, discountPct: 54, rating: 4.3, reviewCount: 18000, dealScore: 64.9, isFakeDiscount: false, mlTrend: 'stable' },
@@ -57,7 +57,6 @@ router.get('/', async (req, res) => {
             $or: [
                 { 'prices.amazon.price':   { $gt: 0 } },
                 { 'prices.flipkart.price': { $gt: 0 } },
-                { 'prices.myntra.price':   { $gt: 0 } },
                 { 'prices.ajio.price':     { $gt: 0 } },
             ]
         }).limit(200);
@@ -65,7 +64,7 @@ router.get('/', async (req, res) => {
         const recommendations = [];
         for (const product of products) {
             const allPlatformPrices = [];
-            for (const plat of ['amazon', 'flipkart', 'myntra', 'ajio']) {
+            for (const plat of ['amazon', 'flipkart', 'ajio']) {
                 const pd = product.prices[plat];
                 if (pd?.price > 0) allPlatformPrices.push({ platform: plat, price: pd.price, mrp: pd.mrp || pd.price, url: pd.url });
             }
@@ -121,7 +120,7 @@ router.get('/trending', async (req, res) => {
 
         const products = await Product.find({}).sort({ updatedAt: -1 }).limit(20);
         const trending = products.map(p => {
-            const prices = ['amazon', 'flipkart', 'myntra', 'ajio'].map(plat => p.prices[plat]?.price).filter(Boolean);
+            const prices = ['amazon', 'flipkart', 'ajio'].map(plat => p.prices[plat]?.price).filter(Boolean);
             return { _id: p._id, name: p.name, image: p.image, category: p.category, price: prices.length ? Math.min(...prices) : null, rating: p.rating, updatedAt: p.updatedAt };
         }).filter(p => p.price);
 
